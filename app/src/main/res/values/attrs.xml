@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--圆角ImageView-->
+    <declare-styleable name="RoundImageView">
+        <attr name="borderRadius" format="integer" />
+        <attr name="type" />
+        <!--1表示圆角 0表示圆形-->
+    </declare-styleable>
+</resources>
