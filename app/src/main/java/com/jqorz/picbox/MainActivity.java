@@ -1,7 +1,9 @@
 package com.jqorz.picbox;
 
+import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -54,6 +56,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         initRecyclerView();
         if (hasPermissions()) {
             start();
+        } else {
+            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+            ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSIONS);
         }
     }
 

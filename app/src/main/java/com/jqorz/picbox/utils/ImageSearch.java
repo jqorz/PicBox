@@ -50,6 +50,6 @@ public class ImageSearch {
         String lowerCase = name.toLowerCase();
 
         return lowerCase.length() > 4
-                && (lowerCase.endsWith(".png") || lowerCase.endsWith(".jpg"));
+                && (lowerCase.endsWith(".png") || lowerCase.endsWith(".jpg")||lowerCase.endsWith(".jpeg"));
     }
 }
