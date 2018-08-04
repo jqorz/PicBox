@@ -39,17 +39,25 @@ public class ImageSearch {
             return Observable.just(f).filter(new Predicate<File>() {
                 @Override
                 public boolean test(File file) throws Exception {
-                    return isImage(file);
+                    return isImage(file) || isLock(file);
                 }
             });
         }
     }
 
-    private static boolean isImage(File file) {
+    public static boolean isImage(File file) {
         String name = file.getName();
         String lowerCase = name.toLowerCase();
 
         return lowerCase.length() > 4
-                && (lowerCase.endsWith(".png") || lowerCase.endsWith(".jpg"));
+                && (lowerCase.endsWith(".png") || lowerCase.endsWith(".jpg") || lowerCase.endsWith(".jpeg"));
+    }
+
+    public static boolean isLock(File file) {
+        String name = file.getName();
+        String lowerCase = name.toLowerCase();
+
+        return lowerCase.length() > 3
+                && (lowerCase.endsWith(".pb"));
     }
 }

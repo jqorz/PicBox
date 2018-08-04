@@ -11,6 +11,8 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -180,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     @Override
                     public ImageModel apply(File file) throws Exception {
                         long time = file.lastModified();
-                        return new ImageModel(time, file.getAbsolutePath());
+                        return new ImageModel(time, file.getAbsolutePath(), ImageSearch.isLock(file));
                     }
                 })
                 .toList()
@@ -271,6 +273,20 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_function, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_lock:
+                break;
+        }
+        return false;
+    }
 
     private void initView() {
 
