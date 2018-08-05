@@ -19,6 +19,8 @@ public class ImageModel {
     private int groupNum;
     private String date;//2017-06-25
     private String time;//18:00
+    private int group;
+
 
     public ImageModel(long key, String path) {
         this.path = path;
@@ -29,6 +31,14 @@ public class ImageModel {
                 SimpleDateFormat("hh:mm", Locale.CHINA);
         time = formatter2.format(key);
 
+    }
+
+    public int getGroup() {
+        return group;
+    }
+
+    public void setGroup(int group) {
+        this.group = group;
     }
 
     @Override

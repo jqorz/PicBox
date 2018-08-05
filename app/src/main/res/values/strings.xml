@@ -1,4 +1,5 @@
 <resources>
     <string name="my_app_name">图片盒子</string>
+    <string name="empty_tip">本地图片为空</string>
 
 </resources>

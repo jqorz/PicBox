@@ -1,9 +1,10 @@
 package com.jqorz.picbox;
 
-import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -24,6 +25,7 @@ import com.jqorz.picbox.view.TitleItemDecoration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -38,6 +40,7 @@ import io.reactivex.schedulers.Schedulers;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.os.Build.VERSION_CODES.M;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
     private static final String TAG = "MainActivity";
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private int GRID_COLUMN_SIZE = 4;
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
+    private View emptyTipView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +58,33 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         setContentView(R.layout.activity_main);
         initView();
         initRecyclerView();
-        if (hasPermissions()) {
-            start();
-        } else {
-            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSIONS);
+        start();
+    }
+
+    @TargetApi(M)
+    private void requestPermissions() {
+        final String[] permissions = new String[]{WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE};
+
+        boolean showRationale = false;
+        for (String perm : permissions) {
+            showRationale |= shouldShowRequestPermissionRationale(perm);
         }
+        if (!showRationale) {
+            requestPermissions(permissions, REQUEST_PERMISSIONS);
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.my_app_name) + "需要存储权限才能正常使用")
+                .setCancelable(false)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        requestPermissions(permissions, REQUEST_PERMISSIONS);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .create()
+                .show();
     }
 
     private void initRecyclerView() {
@@ -93,6 +118,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     return "";
                 } else {
                     return mImageAdapter.getData().get(position).getDate();
+                }
+            }
+
+            @Override
+            public boolean calculateShouldHaveHeaderPadding(int position) {
+                if (position > mImageAdapter.getData().size() - 1)
+                    return false;
+                else {//第一组的第一行才留白
+                    return mImageAdapter.getData().get(position).getGroup() == 0 && calculateShouldHaveHeader(position);
                 }
             }
         };
@@ -129,6 +163,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     private void start() {
+        if (!hasPermissions()) {
+            requestPermissions();
+        }
         if (disposable != null && !disposable.isDisposed()) return;
         mSwipeRefreshLayout.setRefreshing(true);
 
@@ -153,6 +190,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     @Override
                     public void run() throws Exception {
                         mSwipeRefreshLayout.setRefreshing(false);
+                        emptyTipView.setVisibility((mImageAdapter.getData().size() > 0) ? View.GONE : View.VISIBLE);
                     }
                 })
                 .map(new Function<List<ImageModel>, List<ImageModel>>() {
@@ -218,11 +256,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         }
 
-        for (String data : skuIdMap.keySet()) {
-            List<ImageModel> courseModels = skuIdMap.get(data);
-            for (int i = 0, j = courseModels.size(); i < j; i++) {
-                courseModels.get(i).setNum(i);
-                courseModels.get(i).setGroupNum(j);
+        Iterator<String> it = skuIdMap.keySet().iterator();
+        for (int group = 0; it.hasNext(); group++) {
+            List<ImageModel> imageModels = skuIdMap.get(it.next());
+            for (int i = 0, j = imageModels.size(); i < j; i++) {
+                imageModels.get(i).setNum(i);
+                imageModels.get(i).setGroupNum(j);
+                imageModels.get(i).setGroup(group);
             }
         }
         mData.clear();
@@ -235,6 +275,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private void initView() {
 
         mRecyclerView = findViewById(R.id.rl_image);
+
+        emptyTipView = findViewById(R.id.empty_tip);
 
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(this);

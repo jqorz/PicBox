@@ -112,10 +112,12 @@ public abstract class TitleItemDecoration extends RecyclerView.ItemDecoration {
             } else {
                 outRect.set(0, 0, 0, 0);
             }
-            if (position < columnSize) {//最上方的标题上方要空出20dp
+            if (calculateShouldHaveHeaderPadding(position)) {//最上方的标题上方要空出20dp
                 outRect.set(0, mTitleHeight + ToolUtil.dp2px(context, R.dimen.dp_20), 0, 0);
             }
         }
     }
+
+    public abstract boolean calculateShouldHaveHeaderPadding(int position);
 
 }
