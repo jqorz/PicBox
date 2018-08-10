@@ -23,6 +23,7 @@ import com.jqorz.picbox.adapter.ImageAdapter;
 import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.Config;
 import com.jqorz.picbox.utils.ImageSearch;
+import com.jqorz.picbox.utils.ToastUtil;
 import com.jqorz.picbox.view.TitleItemDecoration;
 
 import java.io.File;
@@ -283,6 +284,32 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_lock:
+                int sum = mImageAdapter.getData().size();
+                if (sum > 0) {
+                    int lockSize = 0;
+                    for (ImageModel imageModel : mImageAdapter.getData()) {
+                        if (imageModel.isLock()) {
+                            lockSize++;
+                        }
+                    }
+                    if (sum == lockSize) {
+                        ToastUtil.showToast("共有" + sum + "张图片，已经全部加密");
+                        return false;
+                    }
+                    AlertDialog dialog = new AlertDialog.Builder(this)
+                            .setTitle("一键加密")
+                            .setMessage("共有" + sum + "张图片，其中" + lockSize + "已加密，" + (sum - lockSize) + "张未加密")
+                            .setNegativeButton("取消", null)
+                            .setPositiveButton("加密", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            }).show();
+                } else {
+                    item.setEnabled(false);
+                }
+
                 break;
         }
         return false;
