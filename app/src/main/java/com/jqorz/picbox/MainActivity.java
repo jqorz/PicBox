@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -22,7 +23,10 @@ import com.jelly.mango.MultiplexImage;
 import com.jqorz.picbox.adapter.ImageAdapter;
 import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.Config;
+import com.jqorz.picbox.utils.FileUtil;
 import com.jqorz.picbox.utils.ImageSearch;
+import com.jqorz.picbox.utils.LockUtil;
+import com.jqorz.picbox.utils.Logg;
 import com.jqorz.picbox.utils.ToastUtil;
 import com.jqorz.picbox.view.TitleItemDecoration;
 
@@ -40,6 +44,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
@@ -49,12 +54,15 @@ import static android.os.Build.VERSION_CODES.M;
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_PERMISSIONS = 1;
-    private Disposable disposable;
+    private Disposable searchDisposable;
+    private Disposable lockDisposable;
     private ImageAdapter mImageAdapter;
-    private int GRID_COLUMN_SIZE = 4;
+    private int GRID_COLUMN_SIZE = 3;
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private View emptyTipView;
+    private LockUtil lockUtil;
+    private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         initView();
         initRecyclerView();
         start();
+        lockUtil = new LockUtil();
     }
 
     @TargetApi(M)
@@ -107,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mImageAdapter.bindToRecyclerView(mRecyclerView);
 
         //设置分割线
-        TitleItemDecoration titleItemDecoration = new TitleItemDecoration(this, GRID_COLUMN_SIZE) {
+        TitleItemDecoration titleItemDecoration = new TitleItemDecoration(this) {
             @Override
             public boolean calculateShouldHaveHeader(int position) {
                 if (position > mImageAdapter.getData().size() - 1)
@@ -170,10 +179,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         if (!hasPermissions()) {
             requestPermissions();
         }
-        if (disposable != null && !disposable.isDisposed()) return;
+        if (searchDisposable != null && !searchDisposable.isDisposed()) return;
         mSwipeRefreshLayout.setRefreshing(true);
 
-        disposable = Observable.just(Config.SCREEN_CAPTURE)
+        searchDisposable = Observable.just(Config.SCREEN_CAPTURE)
                 .flatMap(new Function<String, ObservableSource<File>>() {
                     @Override
                     public ObservableSource<File> apply(String s) throws Exception {
@@ -300,20 +309,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                             lockSize++;
                         }
                     }
-                    if (sum == lockSize) {
-                        ToastUtil.showToast("共有" + sum + "张图片，已经全部加密");
-                        return false;
-                    }
-                    AlertDialog dialog = new AlertDialog.Builder(this)
-                            .setTitle("一键加密")
-                            .setMessage("共有" + sum + "张图片，其中" + lockSize + "已加密，" + (sum - lockSize) + "张未加密")
-                            .setNegativeButton("取消", null)
-                            .setPositiveButton("加密", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                }
-                            }).show();
+//                    if (sum == lockSize) {
+//                        ToastUtil.showToast("共有" + sum + "张图片，已经全部加密");
+//                        return false;
+//                    }
+                    showLockDialog(sum, lockSize);
                 } else {
                     item.setEnabled(false);
                 }
@@ -323,11 +323,65 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         return false;
     }
 
+    private void showLockDialog(int sum, int lockSize, boolean isLock) {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("一键加密")
+                .setMessage("共有" + sum + "张图片，其中" + lockSize + "已加密，" + (sum - lockSize) + "张未加密")
+                .setNegativeButton("取消", null)
+                .setPositiveButton(isLock ? "加密" : "解密", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mProgressBar.setVisibility(View.VISIBLE);
+                        lockDisposable = Observable.fromIterable(mImageAdapter.getData())
+                                .filter(new Predicate<ImageModel>() {
+                                    @Override
+                                    public boolean test(ImageModel imageModel) throws Exception {
+                                        return !imageModel.isLock();
+                                    }
+                                })
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .doOnNext(new Consumer<ImageModel>() {
+                                    @Override
+                                    public void accept(ImageModel imageModel) throws Exception {
+                                        lockUtil.lock(new File(imageModel.getPath()));
+                                    }
+                                })
+                                .doFinally(new Action() {
+                                    @Override
+                                    public void run() throws Exception {
+                                        mProgressBar.setVisibility(View.GONE);
+                                    }
+                                })
+                                .doOnError(new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) throws Exception {
+                                        ToastUtil.showToast("加密失败");
+                                    }
+                                })
+                                .subscribe(new Consumer<ImageModel>() {
+                                    @Override
+                                    public void accept(ImageModel imageModel) throws Exception {
+                                        ToastUtil.showToast(FileUtil.getFileNameNoEx(imageModel.getPath()) + " 加密成功");
+                                    }
+                                }, new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) throws Exception {
+                                        Logg.e(throwable.getMessage());
+                                    }
+                                });
+                    }
+                }).show();
+    }
+
     private void initView() {
 
         mRecyclerView = findViewById(R.id.rl_image);
 
         emptyTipView = findViewById(R.id.empty_tip);
+
+        mProgressBar = findViewById(R.id.mProgressBar);
+        mProgressBar.setVisibility(View.GONE);
 
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
@@ -337,8 +391,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (disposable != null && !disposable.isDisposed()) {
-            disposable.dispose();
+        if (searchDisposable != null && !searchDisposable.isDisposed()) {
+            searchDisposable.dispose();
+        }
+        if (lockDisposable != null && !lockDisposable.isDisposed()) {
+            lockDisposable.dispose();
         }
     }
 

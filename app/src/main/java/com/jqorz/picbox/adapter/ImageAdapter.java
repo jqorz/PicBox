@@ -34,11 +34,11 @@ public class ImageAdapter extends BaseQuickAdapter<ImageModel, BaseViewHolder> {
                 .load(item.getPath())
                 .into((RoundImageView) helper.getView(R.id.img_screen_shot));
         GridLayoutManager.LayoutParams layoutParams = (GridLayoutManager.LayoutParams) helper.itemView.getLayoutParams();
-        //如果是最后一排，设置底部边距为0
+        //如果是最后一排，设置底部边距
         if (item.getNum() / gridSize == (item.getGroupNum() - 1) / gridSize) {
-            layoutParams.bottomMargin = 0;
+            layoutParams.bottomMargin =  ToolUtil.dp2px(helper.itemView.getContext(), R.dimen.dp_2);
         } else {
-            layoutParams.bottomMargin = ToolUtil.dp2px(helper.itemView.getContext(), R.dimen.dp_m_10);
+            layoutParams.bottomMargin = ToolUtil.dp2px(helper.itemView.getContext(), R.dimen.dp_m_2);
         }
         //如果是最后一个，设置宽度为平分
         if (item.getNum() == item.getGroupNum() - 1) {

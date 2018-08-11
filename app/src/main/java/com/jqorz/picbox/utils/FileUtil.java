@@ -190,13 +190,13 @@ public class FileUtil {
     }
 
     /**
-     * 重命名文件/文件夹
+     * 重命名文件/文件夹 不修改后缀
      *
      * @param file        原文件
      * @param newFileName 新文件名
      * @return 是否成功
      */
-    public static boolean renameFile(File file, String newFileName) {
+    public static boolean renameFileWithExt(File file, String newFileName) {
         if (newFileName.matches(FILENAME_REGIX)) {
             File newFile;
             if (file.isDirectory()) {
@@ -207,6 +207,26 @@ public class FileUtil {
                         file.getName().lastIndexOf('.'));
                 newFile = new File(file.getParentFile(), temp);
             }
+            if (newFile.exists()) {
+                newFile.delete();
+            }
+            if (file.renameTo(newFile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 重命名文件/文件夹 修改后缀
+     *
+     * @param file        原文件
+     * @param newFileName 新文件名
+     * @return 是否成功
+     */
+    public static boolean renameFile(File file, String newFileName) {
+        if (newFileName.matches(FILENAME_REGIX)) {
+            File newFile = new File(file.getParentFile(), newFileName);
             if (newFile.exists()) {
                 newFile.delete();
             }
