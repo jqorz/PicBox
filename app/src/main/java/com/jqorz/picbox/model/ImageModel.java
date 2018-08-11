@@ -21,10 +21,13 @@ public class ImageModel {
     private String time;//18:00
     private int group;
     private boolean isLock;
+    private long longTime;
 
     public ImageModel(long key, String path, boolean isLock) {
         this.path = path;
         this.isLock = isLock;
+        longTime = key;
+
         SimpleDateFormat formatter = new
                 SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
         date = formatter.format(key);
@@ -32,6 +35,10 @@ public class ImageModel {
                 SimpleDateFormat("hh:mm", Locale.CHINA);
         time = formatter2.format(key);
 
+    }
+
+    public long getLongTime() {
+        return longTime;
     }
 
     public boolean isLock() {

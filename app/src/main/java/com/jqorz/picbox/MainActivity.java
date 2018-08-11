@@ -28,6 +28,7 @@ import com.jqorz.picbox.view.TitleItemDecoration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -184,6 +185,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     public ImageModel apply(File file) throws Exception {
                         long time = file.lastModified();
                         return new ImageModel(time, file.getAbsolutePath(), ImageSearch.isLock(file));
+                    }
+                })
+                .sorted(new Comparator<ImageModel>() {
+                    @Override
+                    public int compare(ImageModel o1, ImageModel o2) {
+                        //按照时间倒序排列
+                        return Long.compare(o2.getLongTime(), o1.getLongTime());
                     }
                 })
                 .toList()
