@@ -1,6 +1,26 @@
 <resources>
     <string name="my_app_name">图片盒子</string>
     <string name="empty_tip">本地图片为空</string>
+    <string name="unlock_tip">输入指纹进行解锁</string>
     <string name="action_lock">一键加密</string>
+    <string name="no_fingerprint_enrolled_dialog_title">未找到指纹数据</string>
+    <string name="no_fingerprint_enrolled_dialog_message">请先在系统设置中录入指纹</string>
+    <string name="cancel_btn_dialog">取消</string>
+
+    <string name="ErrorCanceled_warning">指纹识别被取消</string>
+    <string name="ErrorHwUnavailable_warning">指纹识别硬件不可用</string>
+    <string name="ErrorLockout_warning">指纹识别错误次数过多，请30s后重试</string>
+    <string name="ErrorNoSpace_warning">存储空间已满，指纹无法保存到本地</string>
+    <string name="ErrorTimeout_warning">指纹识别时间过长</string>
+    <string name="ErrorUnableToProcess_warning">传感器无法识别此指纹</string>
+    <string name="AcquiredGood_warning">指纹获取成功</string>
+    <string name="AcquiredImageDirty_warning">指纹过于模糊</string>
+    <string name="AcquiredPartial_warning">指纹不够完整</string>
+    <string name="AcquiredTooFast_warning">指纹速度过快，请重试</string>
+    <string name="AcquiredToSlow_warning">指纹过慢，请重试</string>
+    <string name="AcquiredInsufficient_warning">指纹不够完整</string>
+
+    <string name="fingerprint_success">指纹识别成功</string>
+    <string name="fingerprint_not_recognized">指纹识别不通过</string>
 
 </resources>

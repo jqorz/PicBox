@@ -2,9 +2,18 @@ package com.jqorz.picbox;
 
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.app.KeyguardManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.support.annotation.StringRes;
+import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
+import android.support.v4.os.CancellationSignal;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -15,12 +24,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.jelly.mango.Mango;
 import com.jelly.mango.MultiplexImage;
 import com.jqorz.picbox.adapter.ImageAdapter;
+import com.jqorz.picbox.fingerprint.CryptoObjectHelper;
+import com.jqorz.picbox.fingerprint.FingerprintAuthCallback;
 import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.Config;
 import com.jqorz.picbox.utils.FileUtil;
@@ -48,10 +58,15 @@ import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.USE_FINGERPRINT;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Build.VERSION_CODES.M;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
+    public static final int MSG_AUTH_ERROR = 0x11;
+    public static final int MSG_AUTH_HELP = 0x12;
+    public static final int MSG_AUTH_SUCCESS = 0x10;
+    public static final int MSG_AUTH_FAILED = 0x13;
     private static final String TAG = "MainActivity";
     private static final int REQUEST_PERMISSIONS = 1;
     private Disposable searchDisposable;
@@ -61,8 +76,82 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private View emptyTipView;
+    private View unlockTipView;
     private LockUtil lockUtil;
     private ProgressBar mProgressBar;
+    private FingerprintManagerCompat fingerprintManager;
+    private FingerprintAuthCallback fingerprintAuthCallback;
+    private CancellationSignal cancellationSignal;
+    private Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            Log.d(TAG, "msg: " + msg.what + " ,arg1: " + msg.arg1);
+            switch (msg.what) {
+                case MSG_AUTH_SUCCESS:
+                    setResultInfo(R.string.fingerprint_success);
+                    cancellationSignal = null;
+                    break;
+                case MSG_AUTH_FAILED:
+                    setResultInfo(R.string.fingerprint_not_recognized);
+                    cancellationSignal = null;
+                    break;
+                case MSG_AUTH_ERROR:
+                    handleErrorCode(msg.arg1);
+                    break;
+                case MSG_AUTH_HELP:
+                    handleHelpCode(msg.arg1);
+                    break;
+            }
+        }
+    };
+
+    private void handleErrorCode(int code) {
+        switch (code) {
+            case FingerprintManager.FINGERPRINT_ERROR_CANCELED:
+                setResultInfo(R.string.ErrorCanceled_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ERROR_HW_UNAVAILABLE:
+                setResultInfo(R.string.ErrorHwUnavailable_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ERROR_LOCKOUT:
+                setResultInfo(R.string.ErrorLockout_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ERROR_NO_SPACE:
+                setResultInfo(R.string.ErrorNoSpace_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ERROR_TIMEOUT:
+                setResultInfo(R.string.ErrorTimeout_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ERROR_UNABLE_TO_PROCESS:
+                setResultInfo(R.string.ErrorUnableToProcess_warning);
+                break;
+        }
+    }
+
+    private void handleHelpCode(int code) {
+        switch (code) {
+            case FingerprintManager.FINGERPRINT_ACQUIRED_GOOD:
+                setResultInfo(R.string.AcquiredGood_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ACQUIRED_IMAGER_DIRTY:
+                setResultInfo(R.string.AcquiredImageDirty_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ACQUIRED_INSUFFICIENT:
+                setResultInfo(R.string.AcquiredInsufficient_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ACQUIRED_PARTIAL:
+                setResultInfo(R.string.AcquiredPartial_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ACQUIRED_TOO_FAST:
+                setResultInfo(R.string.AcquiredTooFast_warning);
+                break;
+            case FingerprintManager.FINGERPRINT_ACQUIRED_TOO_SLOW:
+                setResultInfo(R.string.AcquiredToSlow_warning);
+                break;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,13 +159,50 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         setContentView(R.layout.activity_main);
         initView();
         initRecyclerView();
-        start();
-        lockUtil = new LockUtil();
+        checkFingerPrint();
+//        start();
+    }
+
+    private void setResultInfo(@StringRes int stringRes) {
+        ToastUtil.showToast(getString(stringRes));
+    }
+
+    private void checkFingerPrint() {
+        KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        if (keyguardManager != null && keyguardManager.isKeyguardSecure()) {
+            // this device is secure.
+            if (!fingerprintManager.hasEnrolledFingerprints()) {
+                // no fingerprint image has been enrolled.
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.no_fingerprint_enrolled_dialog_title);
+                builder.setMessage(R.string.no_fingerprint_enrolled_dialog_message);
+                builder.setIcon(android.R.drawable.stat_sys_warning);
+                builder.setCancelable(false);
+                builder.setNegativeButton(R.string.cancel_btn_dialog, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+                // show this dialog
+                builder.create().show();
+            } else {
+                CryptoObjectHelper cryptoObjectHelper;
+                try {
+                    cryptoObjectHelper = new CryptoObjectHelper();
+                    fingerprintManager.authenticate(cryptoObjectHelper.buildCryptoObject(), 0,
+                            cancellationSignal, fingerprintAuthCallback, null);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
     }
 
     @TargetApi(M)
     private void requestPermissions() {
-        final String[] permissions = new String[]{WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE};
+        final String[] permissions = new String[]{WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, USE_FINGERPRINT};
 
         boolean showRationale = false;
         for (String perm : permissions) {
@@ -243,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             if (granted == PackageManager.PERMISSION_GRANTED) {
                 start();
             } else {
-                Toast.makeText(this, "请先授予存储区权限", Toast.LENGTH_SHORT).show();
+                ToastUtil.showToast("请先授予存储区&指纹权限");
             }
         }
     }
@@ -313,7 +439,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //                        ToastUtil.showToast("共有" + sum + "张图片，已经全部加密");
 //                        return false;
 //                    }
-                    showLockDialog(sum, lockSize);
+                    showLockDialog(sum, lockSize, true);
                 } else {
                     item.setEnabled(false);
                 }
@@ -374,17 +500,30 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 }).show();
     }
 
+    private void showUnlockDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("解密")
+                .setMessage("请进行指纹验证以解密")
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
     private void initView() {
 
         mRecyclerView = findViewById(R.id.rl_image);
 
-        emptyTipView = findViewById(R.id.empty_tip);
+        emptyTipView = findViewById(R.id.tip_empty);
+        unlockTipView = findViewById(R.id.tip_unlock);
 
         mProgressBar = findViewById(R.id.mProgressBar);
         mProgressBar.setVisibility(View.GONE);
 
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
+
+        fingerprintManager = FingerprintManagerCompat.from(this);
+        fingerprintAuthCallback = new FingerprintAuthCallback(handler);
+        lockUtil = new LockUtil();
 
     }
 

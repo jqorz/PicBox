@@ -25,7 +25,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="@dimen/dp_10"
             android:gravity="center"
-            android:text="@string/empty_tip"
+            android:text="@string/unlock_tip"
             android:textColor="@color/gray"
             android:textSize="@dimen/sp_15" />
     </LinearLayout>
