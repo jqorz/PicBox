@@ -106,6 +106,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         }
     };
+    private CryptoObjectHelper cryptoObjectHelper;
+
 
     private void handleErrorCode(int code) {
         switch (code) {
@@ -168,6 +170,23 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     private void checkFingerPrint() {
+        if (!fingerprintManager.isHardwareDetected()) {
+            // no fingerprint sensor is detected, show dialog to tell user.
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.no_sensor_dialog_title);
+            builder.setMessage(R.string.no_sensor_dialog_message);
+            builder.setIcon(android.R.drawable.stat_sys_warning);
+            builder.setCancelable(false);
+            builder.setNegativeButton(R.string.cancel_btn_dialog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+            // show this dialog.
+            builder.create().show();
+            return;
+        }
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (keyguardManager != null && keyguardManager.isKeyguardSecure()) {
             // this device is secure.
@@ -187,7 +206,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 // show this dialog
                 builder.create().show();
             } else {
-                CryptoObjectHelper cryptoObjectHelper;
                 try {
                     cryptoObjectHelper = new CryptoObjectHelper();
                     fingerprintManager.authenticate(cryptoObjectHelper.buildCryptoObject(), 0,

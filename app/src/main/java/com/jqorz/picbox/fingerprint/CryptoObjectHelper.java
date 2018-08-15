@@ -11,10 +11,9 @@ import java.security.KeyStore;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 
-/**
- * @author jqorz
- * @since 2018/8/13
- */
+/// <summary>
+/// Sample code for building a CryptoWrapper
+/// </summary>
 public class CryptoObjectHelper {
     // This can be key name you want. Should be unique for the app.
     static final String KEY_NAME = "com.createchance.android.sample.fingerprint_authentication_key";
@@ -78,5 +77,4 @@ public class CryptoObjectHelper {
         keyGen.init(keyGenSpec);
         keyGen.generateKey();
     }
-
 }

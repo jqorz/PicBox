@@ -22,5 +22,7 @@
 
     <string name="fingerprint_success">指纹识别成功</string>
     <string name="fingerprint_not_recognized">指纹识别不通过</string>
+    <string name="no_sensor_dialog_title">错误</string>
+    <string name="no_sensor_dialog_message">未找到指纹识别模块</string>
 
 </resources>
