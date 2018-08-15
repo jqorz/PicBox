@@ -34,6 +34,7 @@ import com.jqorz.picbox.utils.ImageSearch;
 import com.jqorz.picbox.utils.LockUtil;
 import com.jqorz.picbox.utils.Logg;
 import com.jqorz.picbox.utils.ToastUtil;
+import com.jqorz.picbox.utils.UserDataUtil;
 import com.jqorz.picbox.view.TitleItemDecoration;
 
 import java.io.File;
@@ -115,9 +116,10 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
 
     private void checkFingerPrint() {
 
-        DialogHelper.createTestDialog(this, this);
-        if (true)
+        if (!UserDataUtil.loadSettingUseFingerprint(this)) {
+            DialogHelper.createTestDialog(this, this);
             return;
+        }
 
         if (!fingerprintManager.isHardwareDetected()) {
             // 无法检测到指纹输入硬件时，提示用户
@@ -369,6 +371,8 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_function, menu);
+        MenuItem action_user_fingerprint = menu.findItem(R.id.action_user_fingerprint);
+        action_user_fingerprint.setChecked(UserDataUtil.loadSettingUseFingerprint(this));
         return true;
     }
 
@@ -385,6 +389,14 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 }
 
                 break;
+            case R.id.action_user_fingerprint:
+                if (!fingerprintManager.isHardwareDetected()) {
+                    ToastUtil.showToast("未检测到指纹识别模块，功能开启失败");
+                    return false;
+                }
+                boolean oldState = item.isChecked();
+                item.setChecked(!oldState);
+                UserDataUtil.updateSettingUseFingerprint(this, !oldState);
         }
         return false;
     }

@@ -6,4 +6,11 @@
         android:orderInCategory="20"
         android:title="@string/action_lock"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_user_fingerprint"
+        android:checkable="true"
+        android:checked="false"
+        android:orderInCategory="20"
+        android:title="@string/action_user_fingerprint"
+        app:showAsAction="never" />
 </menu>
