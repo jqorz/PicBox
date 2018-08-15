@@ -6,13 +6,8 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
 import android.support.v4.os.CancellationSignal;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -33,6 +28,7 @@ import com.jqorz.picbox.base.BaseActivity;
 import com.jqorz.picbox.fingerprint.CryptoObjectHelper;
 import com.jqorz.picbox.fingerprint.FingerprintAuthCallback;
 import com.jqorz.picbox.helper.DialogHelper;
+import com.jqorz.picbox.helper.FingerprintResultHelper;
 import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.Config;
 import com.jqorz.picbox.utils.FileUtil;
@@ -65,10 +61,7 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Build.VERSION_CODES.M;
 
 public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnRefreshListener {
-    public static final int MSG_AUTH_ERROR = 0x11;
-    public static final int MSG_AUTH_HELP = 0x12;
-    public static final int MSG_AUTH_SUCCESS = 0x10;
-    public static final int MSG_AUTH_FAILED = 0x13;
+
     public static final int REQUEST_PERMISSIONS = 1;
     private static final String TAG = "MainActivity";
     private static final int GRID_COLUMN_SIZE = 3;
@@ -81,93 +74,19 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private View emptyTipView;
     private ProgressBar mProgressBar;
-    private AlertDialog checkFingerprintDialog;
 
     private LockUtil lockUtil;
     private FingerprintManagerCompat fingerprintManager;
     private FingerprintAuthCallback fingerprintAuthCallback;
     private CancellationSignal cancellationSignal;
 
-    private Handler handler = new Handler(Looper.getMainLooper()) {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-
-            Log.d(TAG, "msg: " + msg.what + " ,arg1: " + msg.arg1);
-            switch (msg.what) {
-                case MSG_AUTH_SUCCESS:
-                    setResultInfo(R.string.fingerprint_success);
-                    cancellationSignal = null;
-                    checkFingerprintDialog.dismiss();
-                    break;
-                case MSG_AUTH_FAILED:
-                    setResultInfo(R.string.fingerprint_not_recognized);
-                    cancellationSignal = null;
-                    break;
-                case MSG_AUTH_ERROR:
-                    handleErrorCode(msg.arg1);
-                    break;
-                case MSG_AUTH_HELP:
-                    handleHelpCode(msg.arg1);
-                    break;
-            }
-        }
-    };
-
-
-    private void handleErrorCode(int code) {
-        switch (code) {
-            case FingerprintManager.FINGERPRINT_ERROR_CANCELED:
-                setResultInfo(R.string.ErrorCanceled_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ERROR_HW_UNAVAILABLE:
-                setResultInfo(R.string.ErrorHwUnavailable_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ERROR_LOCKOUT:
-                setResultInfo(R.string.ErrorLockout_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ERROR_NO_SPACE:
-                setResultInfo(R.string.ErrorNoSpace_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ERROR_TIMEOUT:
-                setResultInfo(R.string.ErrorTimeout_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ERROR_UNABLE_TO_PROCESS:
-                setResultInfo(R.string.ErrorUnableToProcess_warning);
-                break;
-        }
-    }
-
-    private void handleHelpCode(int code) {
-        switch (code) {
-            case FingerprintManager.FINGERPRINT_ACQUIRED_GOOD:
-                setResultInfo(R.string.AcquiredGood_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ACQUIRED_IMAGER_DIRTY:
-                setResultInfo(R.string.AcquiredImageDirty_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ACQUIRED_INSUFFICIENT:
-                setResultInfo(R.string.AcquiredInsufficient_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ACQUIRED_PARTIAL:
-                setResultInfo(R.string.AcquiredPartial_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ACQUIRED_TOO_FAST:
-                setResultInfo(R.string.AcquiredTooFast_warning);
-                break;
-            case FingerprintManager.FINGERPRINT_ACQUIRED_TOO_SLOW:
-                setResultInfo(R.string.AcquiredToSlow_warning);
-                break;
-        }
-    }
-
 
     @Override
     protected void init(Bundle savedInstanceState) {
         initView();
-        initRecyclerView();
         checkFingerPrint();
-        start();
+        initRecyclerView();
+//        start();
     }
 
     @Override
@@ -175,8 +94,26 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         return R.layout.activity_main;
     }
 
-    private void setResultInfo(@StringRes int stringRes) {
-        ToastUtil.showToast(getString(stringRes));
+    private void initView() {
+
+        mRecyclerView = findViewById(R.id.rl_image);
+
+        emptyTipView = findViewById(R.id.tip_empty);
+
+        mProgressBar = findViewById(R.id.mProgressBar);
+        mProgressBar.setVisibility(View.GONE);
+
+        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+
+        fingerprintManager = FingerprintManagerCompat.from(this);
+        cancellationSignal = new CancellationSignal();
+
+        FingerprintResultHelper fingerprintResultHelper = new FingerprintResultHelper(this);
+        fingerprintAuthCallback = new FingerprintAuthCallback(fingerprintResultHelper.getHandler());
+
+        lockUtil = new LockUtil();
+
     }
 
     private void checkFingerPrint() {
@@ -196,7 +133,8 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                     CryptoObjectHelper cryptoObjectHelper = new CryptoObjectHelper();
                     fingerprintManager.authenticate(cryptoObjectHelper.buildCryptoObject(), 0,
                             cancellationSignal, fingerprintAuthCallback, null);
-                    checkFingerprintDialog = DialogHelper.createCheckFingerprintDialog(this, cancellationSignal);
+                    //弹出扫描指纹的对话框
+                    DialogHelper.createCheckFingerprintDialog(this, cancellationSignal);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -423,12 +361,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
             case R.id.action_lock:
                 int sum = mImageAdapter.getData().size();
                 if (sum > 0) {
-                    int lockSize = 0;
-                    for (ImageModel imageModel : mImageAdapter.getData()) {
-                        if (imageModel.isLock()) {
-                            lockSize++;
-                        }
-                    }
+                    int lockSize = getLockSize();
 //                    if (sum == lockSize) {
 //                        ToastUtil.showToast("共有" + sum + "张图片，已经全部加密");
 //                        return false;
@@ -443,20 +376,30 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         return false;
     }
 
-    private void showLockDialog(int sum, int lockSize, boolean isLock) {
+    private int getLockSize() {
+        int lockSize = 0;
+        for (ImageModel imageModel : mImageAdapter.getData()) {
+            if (imageModel.isLock()) {
+                lockSize++;
+            }
+        }
+        return lockSize;
+    }
+
+    private void showLockDialog(final int sumSize, final int lockSize, boolean isLock) {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("一键加密")
-                .setMessage("共有" + sum + "张图片，其中" + lockSize + "已加密，" + (sum - lockSize) + "张未加密")
+                .setMessage("共有" + sumSize + "张图片，其中" + lockSize + "已加密，" + (sumSize - lockSize) + "张未加密")
                 .setNegativeButton("取消", null)
                 .setPositiveButton(isLock ? "加密" : "解密", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        toLockPic();
+                        toLockPic(true, sumSize, lockSize);
                     }
                 }).show();
     }
 
-    private void toLockPic() {
+    private void toLockPic(final boolean isLock, final int sumSize, final int lockSize) {
         mProgressBar.setVisibility(View.VISIBLE);
         lockDisposable = Observable.fromIterable(mImageAdapter.getData())
                 .filter(new Predicate<ImageModel>() {
@@ -470,7 +413,11 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .doOnNext(new Consumer<ImageModel>() {
                     @Override
                     public void accept(ImageModel imageModel) throws Exception {
-                        lockUtil.lock(new File(imageModel.getPath()));
+                        if (isLock & imageModel.isLock()) {
+                            lockUtil.lock(new File(imageModel.getPath()));
+                        } else if (!isLock & !imageModel.isLock()) {
+                            lockUtil.unlock(new File(imageModel.getPath()));
+                        }
                     }
                 })
                 .doFinally(new Action() {
@@ -482,7 +429,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .doOnError(new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
-                        ToastUtil.showToast("加密失败");
+                        ToastUtil.showToast(isLock ? "加密失败" : "解密失败");
                     }
                 })
                 .subscribe(new Consumer<ImageModel>() {
@@ -498,25 +445,6 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 });
     }
 
-
-    private void initView() {
-
-        mRecyclerView = findViewById(R.id.rl_image);
-
-        emptyTipView = findViewById(R.id.tip_empty);
-
-        mProgressBar = findViewById(R.id.mProgressBar);
-        mProgressBar.setVisibility(View.GONE);
-
-        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout);
-        mSwipeRefreshLayout.setOnRefreshListener(this);
-
-        fingerprintManager = FingerprintManagerCompat.from(this);
-        fingerprintAuthCallback = new FingerprintAuthCallback(handler);
-
-        lockUtil = new LockUtil();
-
-    }
 
     @Override
     protected void onDestroy() {

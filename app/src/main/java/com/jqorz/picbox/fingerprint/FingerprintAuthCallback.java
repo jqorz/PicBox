@@ -4,7 +4,7 @@ package com.jqorz.picbox.fingerprint;
 import android.os.Handler;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
 
-import com.jqorz.picbox.MainActivity;
+import com.jqorz.picbox.helper.FingerprintResultHelper;
 
 /**
  * @author jqorz
@@ -26,7 +26,7 @@ public class FingerprintAuthCallback extends FingerprintManagerCompat.Authentica
         super.onAuthenticationError(errMsgId, errString);
 
         if (handler != null) {
-            handler.obtainMessage(MainActivity.MSG_AUTH_ERROR, errMsgId, 0).sendToTarget();
+            handler.obtainMessage(FingerprintResultHelper.MSG_AUTH_ERROR, errMsgId, 0).sendToTarget();
         }
     }
 
@@ -35,7 +35,7 @@ public class FingerprintAuthCallback extends FingerprintManagerCompat.Authentica
         super.onAuthenticationHelp(helpMsgId, helpString);
 
         if (handler != null) {
-            handler.obtainMessage(MainActivity.MSG_AUTH_HELP, helpMsgId, 0).sendToTarget();
+            handler.obtainMessage(FingerprintResultHelper.MSG_AUTH_HELP, helpMsgId, 0).sendToTarget();
         }
     }
 
@@ -43,7 +43,7 @@ public class FingerprintAuthCallback extends FingerprintManagerCompat.Authentica
     public void onAuthenticationSucceeded(FingerprintManagerCompat.AuthenticationResult result) {
         super.onAuthenticationSucceeded(result);
         if (handler != null) {
-            handler.obtainMessage(MainActivity.MSG_AUTH_SUCCESS).sendToTarget();
+            handler.obtainMessage(FingerprintResultHelper.MSG_AUTH_SUCCESS).sendToTarget();
         }
 
     }
@@ -53,7 +53,7 @@ public class FingerprintAuthCallback extends FingerprintManagerCompat.Authentica
         super.onAuthenticationFailed();
 
         if (handler != null) {
-            handler.obtainMessage(MainActivity.MSG_AUTH_FAILED).sendToTarget();
+            handler.obtainMessage(FingerprintResultHelper.MSG_AUTH_FAILED).sendToTarget();
         }
     }
 }

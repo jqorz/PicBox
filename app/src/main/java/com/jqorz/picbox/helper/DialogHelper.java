@@ -13,6 +13,8 @@ import com.jqorz.picbox.R;
  * @since 2018/8/15
  */
 public class DialogHelper {
+    private static AlertDialog dialog;
+
     public static void createNoHardwareDialog(final Activity activity) {
         new AlertDialog.Builder(activity)
                 .setTitle(R.string.no_sensor_dialog_title)
@@ -43,7 +45,7 @@ public class DialogHelper {
                 .create().show();
     }
 
-    public static AlertDialog createCheckFingerprintDialog(final Activity activity, final CancellationSignal cancellationSignal) {
+    public static void createCheckFingerprintDialog(final Activity activity, final CancellationSignal cancellationSignal) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(R.string.fingerprint_wait_dialog_title);
         builder.setMessage(R.string.fingerprint_wait_dialog_message);
@@ -56,9 +58,14 @@ public class DialogHelper {
                 activity.finish();
             }
         });
-        AlertDialog dialog = builder.create();
+        dialog = builder.create();
         dialog.show();
-        return dialog;
+    }
+
+    public static void cancelCheckFingerprintDialog() {
+        if (dialog != null) {
+            dialog.dismiss();
+        }
     }
 
     public static void showRequestPermissionDialog(final Activity activity, final String[] permissions) {
