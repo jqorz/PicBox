@@ -35,14 +35,20 @@ public class LockUtil {
      * 将文件加密并更改后缀为ConsValue.LOCK_EXT
      */
     public boolean lock(File file) {
+        long time = file.lastModified();
         boolean result = AESCipher(Cipher.ENCRYPT_MODE, file.getPath(), file.getPath(), mSeed);
-        boolean reNameResult = FileUtil.renameFile(file, FileUtil.getFileNameNoEx(FileUtil.getNameFromFile(file)) + ConsValue.LOCK_EXT);
+        String newName = FileUtil.getFileNameNoEx(FileUtil.getNameFromFile(file)) + ConsValue.LOCK_EXT;
+        boolean reNameResult = FileUtil.renameFile(file, newName);
+        FileUtil.setFileModifiedTime(FileUtil.makePath(file.getParent(), newName), time);
         return result && reNameResult;
     }
 
     public boolean unlock(File file) {
+        long time = file.lastModified();
         boolean result = AESCipher(Cipher.DECRYPT_MODE, file.getPath(), file.getPath(), mSeed);
-        boolean reNameResult = FileUtil.renameFile(file, FileUtil.getFileNameNoEx(FileUtil.getNameFromFile(file)) + ConsValue.PIC_EXT);
+        String newName = FileUtil.getFileNameNoEx(FileUtil.getNameFromFile(file)) + ConsValue.PIC_EXT;
+        boolean reNameResult = FileUtil.renameFile(file, newName);
+        FileUtil.setFileModifiedTime(FileUtil.makePath(file.getParent(), newName), time);
         return result && reNameResult;
     }
 

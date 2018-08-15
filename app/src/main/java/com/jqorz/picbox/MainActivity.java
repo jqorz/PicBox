@@ -18,7 +18,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ProgressBar;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.jelly.mango.Mango;
@@ -31,7 +30,6 @@ import com.jqorz.picbox.helper.DialogHelper;
 import com.jqorz.picbox.helper.FingerprintResultHelper;
 import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.Config;
-import com.jqorz.picbox.utils.FileUtil;
 import com.jqorz.picbox.utils.ImageSearch;
 import com.jqorz.picbox.utils.LockUtil;
 import com.jqorz.picbox.utils.Logg;
@@ -60,7 +58,7 @@ import static android.Manifest.permission.USE_FINGERPRINT;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Build.VERSION_CODES.M;
 
-public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnRefreshListener, FingerprintResultHelper.FingerprintResultListener {
 
     public static final int REQUEST_PERMISSIONS = 1;
     private static final String TAG = "MainActivity";
@@ -73,20 +71,20 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private View emptyTipView;
-    private ProgressBar mProgressBar;
+    private AlertDialog checkFingerprintDialog;
 
     private LockUtil lockUtil;
     private FingerprintManagerCompat fingerprintManager;
     private FingerprintAuthCallback fingerprintAuthCallback;
     private CancellationSignal cancellationSignal;
 
+    private boolean isRunning = false;//标记当前是否有后台任务
 
     @Override
     protected void init(Bundle savedInstanceState) {
         initView();
         checkFingerPrint();
         initRecyclerView();
-//        start();
     }
 
     @Override
@@ -100,9 +98,6 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
 
         emptyTipView = findViewById(R.id.tip_empty);
 
-        mProgressBar = findViewById(R.id.mProgressBar);
-        mProgressBar.setVisibility(View.GONE);
-
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
@@ -110,6 +105,8 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         cancellationSignal = new CancellationSignal();
 
         FingerprintResultHelper fingerprintResultHelper = new FingerprintResultHelper(this);
+        fingerprintResultHelper.setFingerprintResultListener(this);
+
         fingerprintAuthCallback = new FingerprintAuthCallback(fingerprintResultHelper.getHandler());
 
         lockUtil = new LockUtil();
@@ -117,6 +114,11 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     }
 
     private void checkFingerPrint() {
+
+        DialogHelper.createTestDialog(this, this);
+        if (true)
+            return;
+
         if (!fingerprintManager.isHardwareDetected()) {
             // 无法检测到指纹输入硬件时，提示用户
             DialogHelper.createNoHardwareDialog(this);
@@ -134,7 +136,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                     fingerprintManager.authenticate(cryptoObjectHelper.buildCryptoObject(), 0,
                             cancellationSignal, fingerprintAuthCallback, null);
                     //弹出扫描指纹的对话框
-                    DialogHelper.createCheckFingerprintDialog(this, cancellationSignal);
+                    checkFingerprintDialog = DialogHelper.createCheckFingerprintDialog(this, cancellationSignal);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -233,7 +235,12 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         return granted == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void start() {
+    /**
+     * 检索文件
+     *
+     * @param needLockOrUnlock 检索后是否需要执行加解密的操作
+     */
+    private void startPicSearch(final boolean needLockOrUnlock, final boolean needFingerprint) {
         if (!hasPermissions()) {
             requestPermissions();
         }
@@ -281,7 +288,17 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .subscribe(new Consumer<List<ImageModel>>() {
                     @Override
                     public void accept(List<ImageModel> imageModels) throws Exception {
-                        mImageAdapter.setNewData(imageModels);
+                        mImageAdapter.replaceData(imageModels);
+                        //如果图片已经全部加密，则弹出指纹认证
+                        if (needFingerprint && getLockSize() == mImageAdapter.getData().size()) {
+                            mImageAdapter.replaceData(new ArrayList<ImageModel>());
+                            checkFingerPrint();
+                            return;
+                        }
+                        //如果需要执行加解密的操作
+                        if (needLockOrUnlock) {
+                            startLockOrUnlockPic(false);
+                        }
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -299,7 +316,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 granted |= r;
             }
             if (granted == PackageManager.PERMISSION_GRANTED) {
-                start();
+                startPicSearch(true, true);
             } else {
                 ToastUtil.showToast("请先授予存储区&指纹权限");
             }
@@ -362,10 +379,6 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 int sum = mImageAdapter.getData().size();
                 if (sum > 0) {
                     int lockSize = getLockSize();
-//                    if (sum == lockSize) {
-//                        ToastUtil.showToast("共有" + sum + "张图片，已经全部加密");
-//                        return false;
-//                    }
                     showLockDialog(sum, lockSize, true);
                 } else {
                     item.setEnabled(false);
@@ -387,55 +400,67 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     }
 
     private void showLockDialog(final int sumSize, final int lockSize, boolean isLock) {
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("一键加密")
                 .setMessage("共有" + sumSize + "张图片，其中" + lockSize + "已加密，" + (sumSize - lockSize) + "张未加密")
                 .setNegativeButton("取消", null)
                 .setPositiveButton(isLock ? "加密" : "解密", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        toLockPic(true, sumSize, lockSize);
+                        startLockOrUnlockPic(true);
                     }
                 }).show();
     }
 
-    private void toLockPic(final boolean isLock, final int sumSize, final int lockSize) {
-        mProgressBar.setVisibility(View.VISIBLE);
-        lockDisposable = Observable.fromIterable(mImageAdapter.getData())
+    private void startLockOrUnlockPic(final boolean toLock) {
+        final AlertDialog dialog = DialogHelper.createProgressDialog(this, toLock);
+        List<ImageModel> models = new ArrayList<>(mImageAdapter.getData());
+        lockDisposable = Observable.fromIterable(models)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .doOnSubscribe(new Consumer<Disposable>() {
+                    @Override
+                    public void accept(Disposable disposable) throws Exception {
+                        isRunning = true;
+                    }
+                })
+                .doOnNext(new Consumer<ImageModel>() {
+                    @Override
+                    public void accept(ImageModel imageModel) throws Exception {
+                        if (!toLock & imageModel.isLock()) {
+                            lockUtil.unlock(new File(imageModel.getPath()));
+                        } else if (toLock & !imageModel.isLock()) {
+                            lockUtil.lock(new File(imageModel.getPath()));
+                        }
+                    }
+                })
                 .filter(new Predicate<ImageModel>() {
                     @Override
                     public boolean test(ImageModel imageModel) throws Exception {
                         return !imageModel.isLock();
                     }
                 })
-                .subscribeOn(Schedulers.io())
+                .toList()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext(new Consumer<ImageModel>() {
-                    @Override
-                    public void accept(ImageModel imageModel) throws Exception {
-                        if (isLock & imageModel.isLock()) {
-                            lockUtil.lock(new File(imageModel.getPath()));
-                        } else if (!isLock & !imageModel.isLock()) {
-                            lockUtil.unlock(new File(imageModel.getPath()));
-                        }
-                    }
-                })
                 .doFinally(new Action() {
                     @Override
                     public void run() throws Exception {
-                        mProgressBar.setVisibility(View.GONE);
+                        dialog.dismiss();
+                        isRunning = false;
                     }
                 })
                 .doOnError(new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
-                        ToastUtil.showToast(isLock ? "加密失败" : "解密失败");
+                        ToastUtil.showToast(toLock ? "加密失败" : "解密失败");
                     }
                 })
-                .subscribe(new Consumer<ImageModel>() {
+
+                .subscribe(new Consumer<List<ImageModel>>() {
                     @Override
-                    public void accept(ImageModel imageModel) throws Exception {
-                        ToastUtil.showToast(FileUtil.getFileNameNoEx(imageModel.getPath()) + " 加密成功");
+                    public void accept(List<ImageModel> imageModel) throws Exception {
+                        ToastUtil.showToast(toLock ? "加密完成" : "解密完成");
+                        startPicSearch(false, true);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -459,6 +484,24 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
 
     @Override
     public void onRefresh() {
-        start();
+        if (isRunning) {
+            mSwipeRefreshLayout.setRefreshing(false);
+            ToastUtil.showToast("当前有任务正在进行");
+        } else {
+            startPicSearch(false, true);
+        }
+    }
+
+    @Override
+    public void onFingerprintSuccess() {
+        if (checkFingerprintDialog != null) {
+            checkFingerprintDialog.dismiss();
+        }
+        startPicSearch(true, false);
+    }
+
+    @Override
+    public void onFingerprintFail() {
+
     }
 }

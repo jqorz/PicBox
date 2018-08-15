@@ -238,6 +238,13 @@ public class FileUtil {
     }
 
     /**
+     * 修改文件修改时间
+     */
+    public static boolean setFileModifiedTime(String filePath, long modifiedTime) {
+        return new File(filePath).setLastModified(modifiedTime);
+    }
+
+    /**
      * 删除文件/文件夹
      *
      * @param file 路径

@@ -28,5 +28,6 @@
     <string name="fingerprint_wait_dialog_title">指纹验证</string>
     <string name="fingerprint_wait_dialog_message">输入指纹进行解锁</string>
 
-
+    <string name="pic_lock">加密中…</string>
+    <string name="pic_unlock">解密中…</string>
 </resources>

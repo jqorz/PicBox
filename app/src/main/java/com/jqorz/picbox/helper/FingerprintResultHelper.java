@@ -6,7 +6,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.StringRes;
-import android.support.v4.os.CancellationSignal;
 import android.util.Log;
 
 import com.jqorz.picbox.R;
@@ -23,6 +22,7 @@ public class FingerprintResultHelper {
     public static final int MSG_AUTH_FAILED = 0x13;
     private Context mContext;
     private String TAG = getClass().getSimpleName();
+    private FingerprintResultListener fingerprintResultListener;
     private Handler handler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
@@ -32,10 +32,13 @@ public class FingerprintResultHelper {
             switch (msg.what) {
                 case MSG_AUTH_SUCCESS:
                     setResultInfo(R.string.fingerprint_success);
-                    DialogHelper.cancelCheckFingerprintDialog();
+                    if (fingerprintResultListener != null)
+                        fingerprintResultListener.onFingerprintSuccess();
                     break;
                 case MSG_AUTH_FAILED:
                     setResultInfo(R.string.fingerprint_not_recognized);
+                    if (fingerprintResultListener != null)
+                        fingerprintResultListener.onFingerprintFail();
                     break;
                 case MSG_AUTH_ERROR:
                     handleErrorCode(msg.arg1);
@@ -49,6 +52,10 @@ public class FingerprintResultHelper {
 
     public FingerprintResultHelper(Context mContext) {
         this.mContext = mContext;
+    }
+
+    public void setFingerprintResultListener(FingerprintResultListener fingerprintResultListener) {
+        this.fingerprintResultListener = fingerprintResultListener;
     }
 
     public Handler getHandler() {
@@ -103,5 +110,11 @@ public class FingerprintResultHelper {
 
     private void setResultInfo(@StringRes int stringRes) {
         ToastUtil.showToast(mContext.getString(stringRes));
+    }
+
+    public interface FingerprintResultListener {
+        void onFingerprintSuccess();
+
+        void onFingerprintFail();
     }
 }

@@ -13,7 +13,6 @@ import com.jqorz.picbox.R;
  * @since 2018/8/15
  */
 public class DialogHelper {
-    private static AlertDialog dialog;
 
     public static void createNoHardwareDialog(final Activity activity) {
         new AlertDialog.Builder(activity)
@@ -45,7 +44,41 @@ public class DialogHelper {
                 .create().show();
     }
 
-    public static void createCheckFingerprintDialog(final Activity activity, final CancellationSignal cancellationSignal) {
+    public static void createTestDialog(final Activity activity, final FingerprintResultHelper.FingerprintResultListener fingerprintResultListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(R.string.fingerprint_wait_dialog_title);
+        builder.setMessage(R.string.fingerprint_wait_dialog_message);
+        builder.setIcon(R.drawable.ic_fingerprint);
+        builder.setCancelable(false);
+        builder.setNegativeButton(R.string.cancel_btn_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                fingerprintResultListener.onFingerprintFail();
+                activity.finish();
+            }
+        });
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                fingerprintResultListener.onFingerprintSuccess();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+    }
+
+    public static AlertDialog createProgressDialog(final Activity activity, boolean isLock) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(isLock ? R.string.pic_lock : R.string.pic_unlock);
+        builder.setView(R.layout.layout_progress_bar);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return dialog;
+    }
+
+    public static AlertDialog createCheckFingerprintDialog(final Activity activity, final CancellationSignal cancellationSignal) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(R.string.fingerprint_wait_dialog_title);
         builder.setMessage(R.string.fingerprint_wait_dialog_message);
@@ -58,15 +91,12 @@ public class DialogHelper {
                 activity.finish();
             }
         });
-        dialog = builder.create();
+        AlertDialog dialog = builder.create();
         dialog.show();
+
+        return dialog;
     }
 
-    public static void cancelCheckFingerprintDialog() {
-        if (dialog != null) {
-            dialog.dismiss();
-        }
-    }
 
     public static void showRequestPermissionDialog(final Activity activity, final String[] permissions) {
         new AlertDialog.Builder(activity)
