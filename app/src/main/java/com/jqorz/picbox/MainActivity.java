@@ -124,6 +124,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         if (!fingerprintManager.isHardwareDetected()) {
             // 无法检测到指纹输入硬件时，提示用户
             DialogHelper.createNoHardwareDialog(this);
+            UserDataUtil.updateSettingUseFingerprint(this, false);
             return;
         }
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
@@ -290,14 +291,15 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .subscribe(new Consumer<List<ImageModel>>() {
                     @Override
                     public void accept(List<ImageModel> imageModels) throws Exception {
-                        mImageAdapter.replaceData(imageModels);
                         //如果图片已经全部加密，则弹出指纹认证
-                        if (needFingerprint && getLockSize() == mImageAdapter.getData().size()) {
+                        if (getLockSize() == mImageAdapter.getData().size()) {
                             mImageAdapter.replaceData(new ArrayList<ImageModel>());
-                            checkFingerPrint();
-                            return;
-                        }
-                        //如果需要执行加解密的操作
+                            if (needFingerprint) {
+                                checkFingerPrint();
+                            }
+                        } else {
+                            mImageAdapter.replaceData(imageModels);
+                        }//如果需要执行加解密的操作
                         if (needLockOrUnlock) {
                             startLockOrUnlockPic(false);
                         }

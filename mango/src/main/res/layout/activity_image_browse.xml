@@ -41,7 +41,7 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingTop="3dp"
-        android:text="保存"
+        android:text="@string/save_picture"
         android:textColor="@android:color/white"
         android:textSize="12sp"
         android:visibility="gone" />
@@ -58,7 +58,7 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingTop="3dp"
-        android:text="原图"
+        android:text="@string/origin_picture"
         android:textColor="@android:color/white"
         android:textSize="12sp" />
 </RelativeLayout>
