@@ -78,6 +78,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     private FingerprintManagerCompat fingerprintManager;
     private FingerprintAuthCallback fingerprintAuthCallback;
     private CancellationSignal cancellationSignal;
+    private List<ImageModel> allData = new ArrayList<>();
 
     private boolean isRunning = false;//标记当前是否有后台任务
 
@@ -241,9 +242,9 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     /**
      * 检索文件
      *
-     * @param needLockOrUnlock 检索后是否需要执行加解密的操作
+     * @param needUnLock 检索后是否需要执行解密的操作
      */
-    private void startPicSearch(final boolean needLockOrUnlock, final boolean needFingerprint) {
+    private void startPicSearch(final boolean needUnLock, final boolean needFingerprint) {
         if (!hasPermissions()) {
             requestPermissions();
         }
@@ -279,6 +280,9 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                     public void run() throws Exception {
                         mSwipeRefreshLayout.setRefreshing(false);
                         emptyTipView.setVisibility((mImageAdapter.getData().size() > 0) ? View.GONE : View.VISIBLE);
+                        if (mImageAdapter.getData().size() == 0 && needFingerprint) {
+                            checkFingerPrint();
+                        }
                     }
                 })
                 .map(new Function<List<ImageModel>, List<ImageModel>>() {
@@ -291,17 +295,11 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .subscribe(new Consumer<List<ImageModel>>() {
                     @Override
                     public void accept(List<ImageModel> imageModels) throws Exception {
-                        //如果图片已经全部加密，则弹出指纹认证
-                        if (getLockSize() == mImageAdapter.getData().size()) {
-                            mImageAdapter.replaceData(new ArrayList<ImageModel>());
-                            if (needFingerprint) {
-                                checkFingerPrint();
-                            }
-                        } else {
-                            mImageAdapter.replaceData(imageModels);
-                        }//如果需要执行加解密的操作
-                        if (needLockOrUnlock) {
+                        //如果图片存在加密的，则进行解密
+                        if (needUnLock && getLockSize(imageModels) > 0) {
                             startLockOrUnlockPic(false);
+                        } else {
+                            mImageAdapter.replaceData(getUnlockData(imageModels));
                         }
                     }
                 }, new Consumer<Throwable>() {
@@ -384,8 +382,8 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
             case R.id.action_lock:
                 int sum = mImageAdapter.getData().size();
                 if (sum > 0) {
-                    int lockSize = getLockSize();
-                    showLockDialog(sum, lockSize, true);
+                    int lockSize = getLockSize(mImageAdapter.getData());
+                    showLockDialog(sum, lockSize);
                 } else {
                     item.setEnabled(false);
                 }
@@ -403,9 +401,9 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         return false;
     }
 
-    private int getLockSize() {
+    private int getLockSize(List<ImageModel> allData) {
         int lockSize = 0;
-        for (ImageModel imageModel : mImageAdapter.getData()) {
+        for (ImageModel imageModel : allData) {
             if (imageModel.isLock()) {
                 lockSize++;
             }
@@ -413,12 +411,22 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         return lockSize;
     }
 
-    private void showLockDialog(final int sumSize, final int lockSize, boolean isLock) {
+    private List<ImageModel> getUnlockData(List<ImageModel> allData) {
+        List<ImageModel> data = new ArrayList<>();
+        for (ImageModel imageModel : allData) {
+            if (!imageModel.isLock()) {
+                data.add(imageModel);
+            }
+        }
+        return data;
+    }
+
+    private void showLockDialog(final int sumSize, final int lockSize) {
         new AlertDialog.Builder(this)
                 .setTitle("一键加密")
                 .setMessage("共有" + sumSize + "张图片，其中" + lockSize + "已加密，" + (sumSize - lockSize) + "张未加密")
                 .setNegativeButton("取消", null)
-                .setPositiveButton(isLock ? "加密" : "解密", new DialogInterface.OnClickListener() {
+                .setPositiveButton("加密", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         startLockOrUnlockPic(true);
