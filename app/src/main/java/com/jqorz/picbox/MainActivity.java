@@ -78,7 +78,6 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     private FingerprintManagerCompat fingerprintManager;
     private FingerprintAuthCallback fingerprintAuthCallback;
     private CancellationSignal cancellationSignal;
-    private List<ImageModel> allData = new ArrayList<>();
 
     private boolean isRunning = false;//标记当前是否有后台任务
 
@@ -297,7 +296,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                     public void accept(List<ImageModel> imageModels) throws Exception {
                         //如果图片存在加密的，则进行解密
                         if (needUnLock && getLockSize(imageModels) > 0) {
-                            startLockOrUnlockPic(false);
+                            startLockOrUnlockPic(false, imageModels);
                         } else {
                             mImageAdapter.replaceData(getUnlockData(imageModels));
                         }
@@ -429,14 +428,14 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .setPositiveButton("加密", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        startLockOrUnlockPic(true);
+                        startLockOrUnlockPic(true, mImageAdapter.getData());
                     }
                 }).show();
     }
 
-    private void startLockOrUnlockPic(final boolean toLock) {
+    private void startLockOrUnlockPic(final boolean toLock, List<ImageModel> data) {
         final AlertDialog dialog = DialogHelper.createProgressDialog(this, toLock);
-        List<ImageModel> models = new ArrayList<>(mImageAdapter.getData());
+        List<ImageModel> models = new ArrayList<>(data);
         lockDisposable = Observable.fromIterable(models)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
@@ -477,12 +476,11 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                         ToastUtil.showToast(toLock ? "加密失败" : "解密失败");
                     }
                 })
-
                 .subscribe(new Consumer<List<ImageModel>>() {
                     @Override
                     public void accept(List<ImageModel> imageModel) throws Exception {
                         ToastUtil.showToast(toLock ? "加密完成" : "解密完成");
-                        startPicSearch(false, true);
+                        startPicSearch(false, toLock);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
