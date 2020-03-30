@@ -7,6 +7,7 @@ import android.support.v4.os.CancellationSignal;
 
 import com.jqorz.picbox.MainActivity;
 import com.jqorz.picbox.R;
+import com.jqorz.picbox.ninepointlock.NineLockView;
 
 /**
  * @author jqorz
@@ -26,7 +27,7 @@ public class DialogHelper {
                         activity.finish();
                     }
                 })
-                .create().show();
+                .show();
     }
 
     public static void createNoFingerprintDialog(final Activity activity) {
@@ -41,14 +42,13 @@ public class DialogHelper {
                         activity.finish();
                     }
                 })
-                .create().show();
+                .show();
     }
 
     public static void createTestDialog(final Activity activity, final FingerprintResultHelper.FingerprintResultListener fingerprintResultListener) {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setTitle(R.string.fingerprint_wait_dialog_title);
-        builder.setMessage(R.string.fingerprint_wait_dialog_message);
-        builder.setIcon(R.drawable.ic_fingerprint);
+        builder.setTitle(R.string.nine_point_lock_dialog_title);
+        builder.setView(R.layout.layout_nine_point_lock);
         builder.setCancelable(false);
         builder.setNegativeButton(R.string.cancel_btn_dialog, new DialogInterface.OnClickListener() {
             @Override
@@ -64,6 +64,7 @@ public class DialogHelper {
             }
         });
         AlertDialog dialog = builder.create();
+        NineLockView nineLockView = dialog.findViewById(R.id.mScreenLockView);
         dialog.show();
 
     }

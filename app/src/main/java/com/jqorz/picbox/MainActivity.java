@@ -29,7 +29,7 @@ import com.jqorz.picbox.fingerprint.FingerprintAuthCallback;
 import com.jqorz.picbox.helper.DialogHelper;
 import com.jqorz.picbox.helper.FingerprintResultHelper;
 import com.jqorz.picbox.model.ImageModel;
-import com.jqorz.picbox.utils.Config;
+import com.jqorz.picbox.cons.Config;
 import com.jqorz.picbox.utils.ImageSearch;
 import com.jqorz.picbox.utils.LockUtil;
 import com.jqorz.picbox.utils.Logg;
@@ -116,7 +116,8 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
 
     private void checkFingerPrint() {
 
-        if (!UserDataUtil.loadSettingUseFingerprint(this)) {
+        if (!UserDataUtil.loadSettingUseFingerprint()) {
+//            onFingerprintSuccess();
             DialogHelper.createTestDialog(this, this);
             return;
         }
@@ -124,7 +125,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         if (!fingerprintManager.isHardwareDetected()) {
             // 无法检测到指纹输入硬件时，提示用户
             DialogHelper.createNoHardwareDialog(this);
-            UserDataUtil.updateSettingUseFingerprint(this, false);
+            UserDataUtil.updateSettingUseFingerprint(false);
             return;
         }
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
@@ -166,7 +167,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
 
 
     private void initRecyclerView() {
-        mImageAdapter = new ImageAdapter(R.layout.item_image, GRID_COLUMN_SIZE);
+        mImageAdapter = new ImageAdapter(GRID_COLUMN_SIZE);
         mImageAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
@@ -371,7 +372,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_function, menu);
         MenuItem action_user_fingerprint = menu.findItem(R.id.action_user_fingerprint);
-        action_user_fingerprint.setChecked(UserDataUtil.loadSettingUseFingerprint(this));
+        action_user_fingerprint.setChecked(UserDataUtil.loadSettingUseFingerprint());
         return true;
     }
 
@@ -395,7 +396,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 }
                 boolean oldState = item.isChecked();
                 item.setChecked(!oldState);
-                UserDataUtil.updateSettingUseFingerprint(this, !oldState);
+                UserDataUtil.updateSettingUseFingerprint(!oldState);
         }
         return false;
     }

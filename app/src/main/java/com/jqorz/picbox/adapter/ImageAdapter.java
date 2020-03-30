@@ -23,8 +23,8 @@ import com.jqorz.picbox.view.RoundImageView;
 public class ImageAdapter extends BaseQuickAdapter<ImageModel, BaseViewHolder> {
     private int gridSize;
 
-    public ImageAdapter(int layoutResId, int gridColumnSize) {
-        super(layoutResId);
+    public ImageAdapter(int gridColumnSize) {
+        super(R.layout.item_image);
         this.gridSize = gridColumnSize;
     }
 

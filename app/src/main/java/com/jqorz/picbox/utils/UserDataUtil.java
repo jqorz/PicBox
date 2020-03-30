@@ -35,12 +35,12 @@ public class UserDataUtil {
     /**
      * 用户设置-使用指纹识别
      */
-    public static boolean loadSettingUseFingerprint(Context context) {
-        return getInstance()._loadBoolData(context, FILE_NAME, SETTING_USE_FINGERPRINT);
+    public static boolean loadSettingUseFingerprint() {
+        return getInstance()._loadBoolData(AppConfig.getApp(), FILE_NAME, SETTING_USE_FINGERPRINT);
     }
 
-    public static void updateSettingUseFingerprint(Context context, boolean use) {
-        getInstance()._updateLocalData(context, FILE_NAME, SETTING_USE_FINGERPRINT, use);
+    public static void updateSettingUseFingerprint(  boolean use) {
+        getInstance()._updateLocalData(AppConfig.getApp(), FILE_NAME, SETTING_USE_FINGERPRINT, use);
     }
 
 

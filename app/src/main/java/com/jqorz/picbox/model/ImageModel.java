@@ -3,16 +3,7 @@ package com.jqorz.picbox.model;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-/**
- * <pre>
- *     copyright: datedu
- *     author : br2ant3
- *     e-mail : xxx@xx
- *     time   : 2018/07/24
- *     desc   :
- *     version: 1.0
- * </pre>
- */
+
 public class ImageModel {
     private String path;
     private int num;

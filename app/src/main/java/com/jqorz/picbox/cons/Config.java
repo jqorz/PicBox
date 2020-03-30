@@ -1,4 +1,4 @@
-package com.jqorz.picbox.utils;
+package com.jqorz.picbox.cons;
 
 import android.os.Environment;
 
