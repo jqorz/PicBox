@@ -16,18 +16,28 @@ android {
         }
     }
 }
-
+def GLIDE_VERSION = "4.10.0"
+def SUPPORT_LIBS_VERSION = "28.0.0"
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "com.android.support:appcompat-v7:${SUPPORT_LIBS_VERSION}"
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
-    implementation "com.android.support:recyclerview-v7:${SUPPORT_LIBS_VERSION}"
-
-    implementation 'io.reactivex.rxjava2:rxjava:2.1.15'
-    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-
-    implementation "com.github.bumptech.glide:glide:${GLIDE_VERSION}"
-    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.34'
     implementation project(path: ':mango')
+
+    //androidx
+    api 'androidx.appcompat:appcompat:1.1.0'
+    api 'com.google.android.material:material:1.1.0'
+    api 'androidx.constraintlayout:constraintlayout:1.1.3'
+
+    //rxjava2
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    implementation 'com.rxjava.rxlife:rxlife:2.0.0'
+
+
+    //BaseRecyclerViewAdapterHelper
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.50'
+    //fragmentation
+    implementation 'me.yokeyword:fragmentation:1.3.6'
+    //glide
+    implementation "com.github.bumptech.glide:glide:${GLIDE_VERSION}"
 
 }

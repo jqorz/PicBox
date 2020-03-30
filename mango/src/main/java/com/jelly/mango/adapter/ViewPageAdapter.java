@@ -2,7 +2,6 @@ package com.jelly.mango.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.support.v4.view.PagerAdapter;
 import android.text.TextUtils;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -10,11 +9,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.viewpager.widget.PagerAdapter;
+
+import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
+import com.github.chrisbanes.photoview.PhotoViewAttacher;
 import com.jelly.mango.ImageBrowseActivity;
 import com.jelly.mango.MultiplexImage;
 import com.jelly.mango.R;
-import com.jelly.mango.progressGlide.GlideApp;
 import com.jelly.mango.progressGlide.MangoBitmapTarget;
 import com.jelly.mango.progressGlide.MangoGIFDrawableTarget;
 import com.jelly.mango.progressGlide.MangoProgressTarget;
@@ -24,7 +26,6 @@ import com.jelly.mango.progressview.RingProgressView;
 import java.lang.ref.SoftReference;
 import java.util.List;
 
-import uk.co.senab.photoview.PhotoViewAttacher;
 
 
 /**
@@ -77,13 +78,6 @@ public class ViewPageAdapter extends PagerAdapter {
                 viewHolder.photoViewAttacher = new PhotoViewAttacher(viewHolder.image);
                 glideLoadImage(viewHolder.photoViewAttacher, viewHolder.progressView, viewHolder.image, position, false);
             }
-            viewHolder.photoViewAttacher.setOnPhotoTapListener(new PhotoViewAttacher.OnPhotoTapListener() {
-                @Override
-                public void onPhotoTap(View view, float x, float y) {
-//                    Activity activity = (Activity) context;
-//                    activity.finish();
-                }
-            });
             view.setTag(viewHolder);
             cacheView.put(position, new SoftReference<>(view));
         }
@@ -154,7 +148,6 @@ public class ViewPageAdapter extends PagerAdapter {
      * <p>If is GIF image use MangoGIFDrawableTarget and others use MangoBitmapTarget</p>
      * <p>if is Original image use OMangoProgressTarget and others use MangoProgressTarget</p>
      *
-     * @param photoViewAttacher {@link uk.co.senab.photoview.PhotoViewAttacher}
      * @param progressView      {@link com.jelly.mango.progressview.RingProgressView}
      * @param image             ImageView
      * @param position          ViewPager position
@@ -173,21 +166,21 @@ public class ViewPageAdapter extends PagerAdapter {
             if (isO) {
                 OMangoProgressTarget<GifDrawable> gifTarget = new OMangoProgressTarget<>(context, new MangoGIFDrawableTarget(photoViewAttacher), progressView, image);
                 gifTarget.setModel(model);
-                GlideApp.with(context).asGif().load(model).into(gifTarget);
+                Glide.with(context).asGif().load(model).into(gifTarget);
             } else {
                 MangoProgressTarget<GifDrawable> gifTarget = new MangoProgressTarget<>(context, new MangoGIFDrawableTarget(photoViewAttacher), progressView);
                 gifTarget.setModel(model);
-                GlideApp.with(context).asGif().load(model).into(gifTarget);
+                Glide.with(context).asGif().load(model).into(gifTarget);
             }
         } else {
             if (isO) {
                 OMangoProgressTarget<Bitmap> otherTarget = new OMangoProgressTarget<>(context, new MangoBitmapTarget(photoViewAttacher), progressView, image);
                 otherTarget.setModel(model);
-                GlideApp.with(context).asBitmap().load(model).into(otherTarget);
+                Glide.with(context).asBitmap().load(model).into(otherTarget);
             } else {
                 MangoProgressTarget<Bitmap> otherTarget = new MangoProgressTarget<>(context, new MangoBitmapTarget(photoViewAttacher), progressView);
                 otherTarget.setModel(model);
-                GlideApp.with(context).asBitmap().load(model).into(otherTarget);
+                Glide.with(context).asBitmap().load(model).into(otherTarget);
             }
         }
 

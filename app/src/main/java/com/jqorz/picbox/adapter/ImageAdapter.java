@@ -10,16 +10,7 @@ import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.ToolUtil;
 import com.jqorz.picbox.view.RoundImageView;
 
-/**
- * <pre>
- *     copyright: datedu
- *     author : br2ant3
- *     e-mail : xxx@xx
- *     time   : 2018/07/24
- *     desc   :
- *     version: 1.0
- * </pre>
- */
+
 public class ImageAdapter extends BaseQuickAdapter<ImageModel, BaseViewHolder> {
     private int gridSize;
 

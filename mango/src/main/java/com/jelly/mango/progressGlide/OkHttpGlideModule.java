@@ -6,11 +6,9 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.GlideBuilder;
 import com.bumptech.glide.Registry;
 import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.load.model.GlideUrl;
-import com.bumptech.glide.module.AppGlideModule;
 import com.bumptech.glide.module.LibraryGlideModule;
 
 import java.io.IOException;
@@ -37,18 +35,14 @@ import okio.Source;
 
 
 @GlideModule
-public class OkHttpGlideModule extends AppGlideModule{
+public class OkHttpGlideModule extends LibraryGlideModule {
 
     private static final String TAG = OkHttpGlideModule.class.getName();
 
-    @Override public void registerComponents(Context context, Glide glide, Registry registry) {
-        OkHttpClient client = new OkHttpClient().newBuilder().addInterceptor(createInterceptor(new DispatchingProgressListener())).build();
-        registry.replace(GlideUrl.class, InputStream.class, new OkHttpUrlLoader.Factory(client));
-    }
-
     private static Interceptor createInterceptor(final ResponseProgressListener listener) {
         return new Interceptor() {
-            @Override public Response intercept(Chain chain) throws IOException {
+            @Override
+            public Response intercept(Chain chain) throws IOException {
                 Request request = chain.request();
                 Response response = chain.proceed(request);
                 return response.newBuilder()
@@ -58,20 +52,29 @@ public class OkHttpGlideModule extends AppGlideModule{
         };
     }
 
-    public interface UIProgressListener {
-        void onProgress(long bytesRead, long expectedLength);
-        /**
-         * Control how often the listener needs an update. 0% and 100% will always be dispatched.
-         * @return in percentage (0.2 = call {@link #onProgress} around every 0.2 percent of progress)
-         */
-        float getGranualityPercentage();
-    }
-
     public static void forget(String url) {
         DispatchingProgressListener.forget(url);
     }
+
     public static void expect(String url, UIProgressListener listener) {
         DispatchingProgressListener.expect(url, listener);
+    }
+
+    @Override
+    public void registerComponents(Context context, Glide glide, Registry registry) {
+        OkHttpClient client = new OkHttpClient().newBuilder().addInterceptor(createInterceptor(new DispatchingProgressListener())).build();
+        registry.replace(GlideUrl.class, InputStream.class, new OkHttpUrlLoader.Factory(client));
+    }
+
+    public interface UIProgressListener {
+        void onProgress(long bytesRead, long expectedLength);
+
+        /**
+         * Control how often the listener needs an update. 0% and 100% will always be dispatched.
+         *
+         * @return in percentage (0.2 = call {@link #onProgress} around every 0.2 percent of progress)
+         */
+        float getGranualityPercentage();
     }
 
     private interface ResponseProgressListener {
@@ -83,6 +86,7 @@ public class OkHttpGlideModule extends AppGlideModule{
         private static final Map<String, Long> PROGRESSES = new HashMap<>();
 
         private final Handler handler;
+
         DispatchingProgressListener() {
             this.handler = new Handler(Looper.getMainLooper());
         }
@@ -91,11 +95,13 @@ public class OkHttpGlideModule extends AppGlideModule{
             LISTENERS.remove(url);
             PROGRESSES.remove(url);
         }
+
         static void expect(String url, UIProgressListener listener) {
             LISTENERS.put(url, listener);
         }
 
-        @Override public void update(HttpUrl url, final long bytesRead, final long contentLength) {
+        @Override
+        public void update(HttpUrl url, final long bytesRead, final long contentLength) {
             //System.out.printf("%s: %d/%d = %.2f%%%n", url, bytesRead, contentLength, (100f * bytesRead) / contentLength);
             String key = url.toString();
             final UIProgressListener listener = LISTENERS.get(key);
@@ -108,7 +114,8 @@ public class OkHttpGlideModule extends AppGlideModule{
             }
             if (needsDispatch(key, bytesRead, contentLength, listener.getGranualityPercentage())) {
                 handler.post(new Runnable() {
-                    @Override public void run() {
+                    @Override
+                    public void run() {
                         listener.onProgress(bytesRead, contentLength);
                     }
                 });
@@ -120,7 +127,7 @@ public class OkHttpGlideModule extends AppGlideModule{
                 return true;
             }
             float percent = 100f * current / total;
-            long currentProgress = (long)(percent / granularity);
+            long currentProgress = (long) (percent / granularity);
             Long lastProgress = PROGRESSES.get(key);
             if (lastProgress == null || currentProgress != lastProgress) {
                 PROGRESSES.put(key, currentProgress);
@@ -144,15 +151,18 @@ public class OkHttpGlideModule extends AppGlideModule{
             this.progressListener = progressListener;
         }
 
-        @Override public MediaType contentType() {
+        @Override
+        public MediaType contentType() {
             return responseBody.contentType();
         }
 
-        @Override public long contentLength() {
+        @Override
+        public long contentLength() {
             return responseBody.contentLength();
         }
 
-        @Override public BufferedSource source() {
+        @Override
+        public BufferedSource source() {
             if (bufferedSource == null) {
                 bufferedSource = Okio.buffer(source(responseBody.source()));
             }
@@ -162,7 +172,9 @@ public class OkHttpGlideModule extends AppGlideModule{
         private Source source(Source source) {
             return new ForwardingSource(source) {
                 long totalBytesRead = 0L;
-                @Override public long read(Buffer sink, long byteCount) throws IOException {
+
+                @Override
+                public long read(Buffer sink, long byteCount) throws IOException {
                     long bytesRead = super.read(sink, byteCount);
 
                     long fullLength = responseBody.contentLength();
@@ -171,7 +183,7 @@ public class OkHttpGlideModule extends AppGlideModule{
                     } else {
                         totalBytesRead += bytesRead;
                     }
-                    if (fullLength == -1 && bytesRead != -1){ // if fullLength equal -1,fullLength is totalBytesRead + 1
+                    if (fullLength == -1 && bytesRead != -1) { // if fullLength equal -1,fullLength is totalBytesRead + 1
                         fullLength = totalBytesRead + 1;
                     }
                     progressListener.update(url, totalBytesRead, fullLength);
