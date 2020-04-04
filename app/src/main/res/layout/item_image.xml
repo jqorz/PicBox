@@ -2,46 +2,24 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rl_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clipChildren="false">
+    android:layout_marginBottom="@dimen/dp_3"
+    android:layout_marginTop="@dimen/dp_3"
+    android:clipChildren="true"
+    android:paddingEnd="@dimen/dp_2"
+    android:paddingStart="@dimen/dp_2">
 
-    <FrameLayout
-        android:id="@+id/view_line"
-        android:layout_width="@dimen/dp_38"
-        android:layout_height="match_parent"
-        android:layout_marginStart="@dimen/dp_m_38"
-        android:clipChildren="false"
-        android:visibility="gone">
-
-        <View
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="@dimen/dp_16"
-            android:background="@color/main_color" />
-
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/rl_item"
+    <com.jqorz.picbox.view.RoundImageView
+        android:id="@+id/img_screen_shot"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/dp_10"
-        android:layout_marginTop="@dimen/dp_10"
-        android:clipChildren="true"
-        android:paddingEnd="@dimen/dp_5"
-        android:paddingStart="@dimen/dp_5">
-
-        <com.jqorz.picbox.view.RoundImageView
-            android:id="@+id/img_screen_shot"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/dp_90"
-            app:borderRadius="3"
-            app:type="1"
-            tools:background="#99000000" />
-
-
-    </FrameLayout>
+        android:layout_height="@dimen/dp_120"
+        app:borderRadius="3"
+        app:type="1"
+        tools:background="#99000000" />
 
 
 </FrameLayout>
+
+

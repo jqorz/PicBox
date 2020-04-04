@@ -3,16 +3,7 @@ package com.jqorz.picbox.model;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-/**
- * <pre>
- *     copyright: datedu
- *     author : br2ant3
- *     e-mail : xxx@xx
- *     time   : 2018/07/24
- *     desc   :
- *     version: 1.0
- * </pre>
- */
+
 public class ImageModel {
     private String path;
     private int num;
@@ -20,10 +11,14 @@ public class ImageModel {
     private String date;//2017-06-25
     private String time;//18:00
     private int group;
+    private boolean isLock;
+    private long longTime;
 
-
-    public ImageModel(long key, String path) {
+    public ImageModel(long key, String path, boolean isLock) {
         this.path = path;
+        this.isLock = isLock;
+        longTime = key;
+
         SimpleDateFormat formatter = new
                 SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
         date = formatter.format(key);
@@ -31,6 +26,14 @@ public class ImageModel {
                 SimpleDateFormat("hh:mm", Locale.CHINA);
         time = formatter2.format(key);
 
+    }
+
+    public long getLongTime() {
+        return longTime;
+    }
+
+    public boolean isLock() {
+        return isLock;
     }
 
     public int getGroup() {

@@ -10,35 +10,29 @@ import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.utils.ToolUtil;
 import com.jqorz.picbox.view.RoundImageView;
 
-/**
- * <pre>
- *     copyright: datedu
- *     author : br2ant3
- *     e-mail : xxx@xx
- *     time   : 2018/07/24
- *     desc   :
- *     version: 1.0
- * </pre>
- */
+
 public class ImageAdapter extends BaseQuickAdapter<ImageModel, BaseViewHolder> {
     private int gridSize;
 
-    public ImageAdapter(int layoutResId, int gridColumnSize) {
-        super(layoutResId);
+    public ImageAdapter(int gridColumnSize) {
+        super(R.layout.item_image);
         this.gridSize = gridColumnSize;
     }
 
     @Override
     protected void convert(BaseViewHolder helper, ImageModel item) {
+        if (item.isLock()) {
+            return;
+        }
         Glide.with(mContext)
                 .load(item.getPath())
                 .into((RoundImageView) helper.getView(R.id.img_screen_shot));
         GridLayoutManager.LayoutParams layoutParams = (GridLayoutManager.LayoutParams) helper.itemView.getLayoutParams();
-        //如果是最后一排，设置底部边距为0
+        //如果是最后一排，设置底部边距
         if (item.getNum() / gridSize == (item.getGroupNum() - 1) / gridSize) {
-            layoutParams.bottomMargin = 0;
+            layoutParams.bottomMargin = ToolUtil.dp2px(helper.itemView.getContext(), R.dimen.dp_2);
         } else {
-            layoutParams.bottomMargin = ToolUtil.dp2px(helper.itemView.getContext(), R.dimen.dp_m_10);
+            layoutParams.bottomMargin = ToolUtil.dp2px(helper.itemView.getContext(), R.dimen.dp_m_2);
         }
         //如果是最后一个，设置宽度为平分
         if (item.getNum() == item.getGroupNum() - 1) {
@@ -46,12 +40,7 @@ public class ImageAdapter extends BaseQuickAdapter<ImageModel, BaseViewHolder> {
                 layoutParams.width = getRecyclerView().getWidth() / gridSize;
             }
         }
-        //如果是左侧数据，显示线
-        if (item.getNum() % gridSize == 0) {
-            helper.setGone(R.id.view_line, true);
-        } else {
-            helper.setGone(R.id.view_line, false);
-        }
+
         helper.itemView.setLayoutParams(layoutParams);
 
     }

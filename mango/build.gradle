@@ -1,14 +1,11 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.novoda.bintray-release'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion 28
     }
     buildTypes {
         release {
@@ -22,25 +19,18 @@ android {
     }
 
 }
-
+def GLIDE_VERSION = "4.10.0"
 dependencies {
-    implementation "com.android.support:appcompat-v7:${SUPPORT_LIBS_VERSION}"
-    implementation "com.android.support:support-v4:${SUPPORT_LIBS_VERSION}"
+    //androidx
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 
     //PhotoView
-    implementation "com.github.chrisbanes.photoview:library:1.2.4"
-    //glide
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0' //glide
+
     implementation "com.github.bumptech.glide:glide:${GLIDE_VERSION}"
     annotationProcessor "com.github.bumptech.glide:compiler:${GLIDE_VERSION}"
     //okhttp
-    implementation "com.squareup.okhttp3:okhttp:${OKHTTP3_VERSION}"
-}
-
-publish {
-    userOrg = 'jellycai'      //bintray注册的用户名
-    groupId = 'com.jelly'         //compile引用时的第1部分groupId
-    artifactId = 'mango'     //compile引用时的第2部分项目名
-    publishVersion = '1.3.0'    //compile引用时的第3部分版本号
-    desc = 'This is android browse image library'
-    website = 'https://github.com/JellyCai1995/Mango'
+    implementation "com.squareup.okhttp3:okhttp:3.8.1"
 }

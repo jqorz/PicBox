@@ -7,16 +7,7 @@ import io.reactivex.ObservableSource;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-/**
- * <pre>
- *     copyright: datedu
- *     author : br2ant3
- *     e-mail : xxx@xx
- *     time   : 2018/07/24
- *     desc   :
- *     version: 1.0
- * </pre>
- */
+
 public class ImageSearch {
 
     public static Observable<File> listImageFiles(final File f) {
@@ -39,17 +30,25 @@ public class ImageSearch {
             return Observable.just(f).filter(new Predicate<File>() {
                 @Override
                 public boolean test(File file) throws Exception {
-                    return isImage(file);
+                    return isImage(file) || isLock(file);
                 }
             });
         }
     }
 
-    private static boolean isImage(File file) {
+    public static boolean isImage(File file) {
         String name = file.getName();
         String lowerCase = name.toLowerCase();
 
         return lowerCase.length() > 4
-                && (lowerCase.endsWith(".png") || lowerCase.endsWith(".jpg")||lowerCase.endsWith(".jpeg"));
+                && (lowerCase.endsWith(".png") || lowerCase.endsWith(".jpg") || lowerCase.endsWith(".jpeg"));
+    }
+
+    public static boolean isLock(File file) {
+        String name = file.getName();
+        String lowerCase = name.toLowerCase();
+
+        return lowerCase.length() > 3
+                && (lowerCase.endsWith(".pb"));
     }
 }

@@ -1,0 +1,15 @@
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tv_Toast"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:background="@drawable/toast_bg"
+    android:gravity="center"
+    android:maxWidth="@dimen/dp_220"
+    android:padding="@dimen/dp_10"
+    android:textColor="#ffffff"
+    android:textSize="@dimen/sp_14"
+    tools:text="密码错误">
+
+</TextView>

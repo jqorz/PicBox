@@ -26,14 +26,12 @@ public abstract class TitleItemDecoration extends RecyclerView.ItemDecoration {
     private Rect mBounds;//用于存放测量文字Rect
     private int mTitleHeight;//title的高
     private Context context;
-    private int columnSize;
 
-    protected TitleItemDecoration(Context context, int columnSize) {
+    protected TitleItemDecoration(Context context) {
         super();
         mPaint = new Paint();
         mBounds = new Rect();
 
-        this.columnSize = columnSize;
 
         this.context = context;
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.mipmap.bg_flag);
@@ -56,7 +54,7 @@ public abstract class TitleItemDecoration extends RecyclerView.ItemDecoration {
     @Override//先调用 在绘制itemView之前绘制,此处为绘制每一个Title
     public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
         super.onDraw(c, parent, state);
-        final int left = ToolUtil.dp2px(context, R.dimen.dp_m_38);
+        final int left = ToolUtil.dp2px(context, R.dimen.dp_m_20);
         final int right = parent.getWidth() - parent.getPaddingRight();
         final int childCount = parent.getChildCount();
         for (int i = 0; i < childCount; i++) {
@@ -91,10 +89,10 @@ public abstract class TitleItemDecoration extends RecyclerView.ItemDecoration {
         mPaint.getTextBounds(tag, 0, String.valueOf(tag).length(), mBounds);
         //绘制标题背景
         long bitmapStartY = child.getTop() - params.topMargin - mTitleHeight / 2 - bitmap.getHeight() / 2;
-        c.drawBitmap(bitmap, left + ToolUtil.dp2px(context, R.dimen.dp_10), bitmapStartY, mPaint);
+        c.drawBitmap(bitmap, left + ToolUtil.dp2px(context, R.dimen.dp_4), bitmapStartY, mPaint);
         //绘制标题文字
         long textStartY = child.getTop() - params.topMargin - (mTitleHeight / 2 - mBounds.height() / 2);
-        c.drawText(tag, left + ToolUtil.dp2px(context, R.dimen.dp_30), textStartY, mPaint);
+        c.drawText(tag, left + ToolUtil.dp2px(context, R.dimen.dp_20), textStartY, mPaint);
 
     }
 
@@ -113,7 +111,7 @@ public abstract class TitleItemDecoration extends RecyclerView.ItemDecoration {
                 outRect.set(0, 0, 0, 0);
             }
             if (calculateShouldHaveHeaderPadding(position)) {//最上方的标题上方要空出20dp
-                outRect.set(0, mTitleHeight + ToolUtil.dp2px(context, R.dimen.dp_20), 0, 0);
+                outRect.set(0, mTitleHeight + ToolUtil.dp2px(context, R.dimen.dp_10), 0, 0);
             }
         }
     }

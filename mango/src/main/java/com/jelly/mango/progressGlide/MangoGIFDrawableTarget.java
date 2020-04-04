@@ -2,8 +2,8 @@ package com.jelly.mango.progressGlide;
 
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.target.ImageViewTarget;
+import com.github.chrisbanes.photoview.PhotoViewAttacher;
 
-import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
  * Created by Jelly on 2017/8/20.
@@ -15,7 +15,7 @@ public class MangoGIFDrawableTarget extends ImageViewTarget<GifDrawable> {
     private PhotoViewAttacher photoViewAttacher;
 
     public MangoGIFDrawableTarget(PhotoViewAttacher photoViewAttacher) {
-        super(photoViewAttacher.getImageView());
+        super(photoViewAttacher.);
         this.photoViewAttacher = photoViewAttacher;
     }
 
