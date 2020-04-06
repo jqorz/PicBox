@@ -4,7 +4,8 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import java.util.LinkedList;
 

@@ -1,15 +1,22 @@
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/tv_Toast"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/toast_root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:background="@drawable/toast_bg"
     android:gravity="center"
-    android:maxWidth="@dimen/dp_220"
-    android:padding="@dimen/dp_10"
-    android:textColor="#ffffff"
-    android:textSize="@dimen/sp_14"
-    tools:text="密码错误">
+    android:orientation="horizontal">
 
-</TextView>
+    <ImageView
+        android:id="@+id/toast_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="@dimen/dp_2" />
+
+    <TextView
+        android:id="@+id/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/dp_8"
+        android:textSize="@dimen/sp_14" />
+
+</LinearLayout>

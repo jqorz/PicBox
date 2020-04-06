@@ -2,7 +2,8 @@ package com.jqorz.picbox.fingerprint;
 
 
 import android.os.Handler;
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
+
+import androidx.core.hardware.fingerprint.FingerprintManagerCompat;
 
 import com.jqorz.picbox.helper.FingerprintResultHelper;
 

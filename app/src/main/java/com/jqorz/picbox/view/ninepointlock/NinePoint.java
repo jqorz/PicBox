@@ -1,4 +1,4 @@
-package com.jqorz.picbox.ninepointlock;
+package com.jqorz.picbox.view.ninepointlock;
 
 /**
  * @author jqorz

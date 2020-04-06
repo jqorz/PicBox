@@ -17,13 +17,15 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 
+import androidx.appcompat.widget.AppCompatImageView;
+
 import com.jqorz.picbox.R;
 
 
 /**
  * 自定义圆角或圆形图片
  */
-public class RoundImageView extends android.support.v7.widget.AppCompatImageView {
+public class RoundImageView extends AppCompatImageView {
     private static final int TYPE_CIRCLE = 0;
     private static final int TYPE_ROUND = 1;
     /**

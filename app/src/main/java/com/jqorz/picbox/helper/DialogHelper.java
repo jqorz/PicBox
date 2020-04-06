@@ -3,11 +3,12 @@ package com.jqorz.picbox.helper;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.support.v4.os.CancellationSignal;
 
-import com.jqorz.picbox.MainActivity;
+import androidx.core.os.CancellationSignal;
+
+import com.jqorz.picbox.frame.MainActivity;
 import com.jqorz.picbox.R;
-import com.jqorz.picbox.ninepointlock.NineLockView;
+import com.jqorz.picbox.view.ninepointlock.NineLockView;
 
 /**
  * @author jqorz

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:padding="@dimen/dp_40">
 
-    <com.jqorz.picbox.ninepointlock.NineLockView
+    <com.jqorz.picbox.view.ninepointlock.NineLockView
         android:id="@+id/mScreenLockView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

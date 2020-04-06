@@ -1,27 +1,27 @@
-package com.jqorz.picbox;
+package com.jqorz.picbox.frame;
 
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
-import android.support.v4.os.CancellationSignal;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.chad.library.adapter.base.BaseQuickAdapter;
+import androidx.annotation.NonNull;
+import androidx.core.hardware.fingerprint.FingerprintManagerCompat;
+import androidx.core.os.CancellationSignal;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.jelly.mango.Mango;
 import com.jelly.mango.MultiplexImage;
+import com.jqorz.picbox.R;
 import com.jqorz.picbox.adapter.ImageAdapter;
 import com.jqorz.picbox.base.BaseActivity;
 import com.jqorz.picbox.fingerprint.CryptoObjectHelper;
@@ -32,14 +32,11 @@ import com.jqorz.picbox.model.ImageModel;
 import com.jqorz.picbox.cons.Config;
 import com.jqorz.picbox.utils.ImageSearch;
 import com.jqorz.picbox.utils.LockUtil;
-import com.jqorz.picbox.utils.Logg;
 import com.jqorz.picbox.utils.ToastUtil;
 import com.jqorz.picbox.utils.UserDataUtil;
-import com.jqorz.picbox.view.TitleItemDecoration;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,10 +45,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
@@ -168,68 +162,21 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
 
     private void initRecyclerView() {
         mImageAdapter = new ImageAdapter(GRID_COLUMN_SIZE);
-        mImageAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                Mango.setTitle("图片浏览");
-                List<ImageModel> models = mImageAdapter.getData();
-                Mango.setImages(loadImage(models)); //设置图片源
-                Mango.setPosition(position); //设置初始显示位置
-                Mango.open(MainActivity.this); //开启图片浏览
-            }
-
+        mImageAdapter.setOnItemClickListener((adapter, view, position) -> {
+            List<ImageModel> models = mImageAdapter.getData();
+            Mango.setImages(loadImage(models)); //设置图片源
+            Mango.setPosition(position); //设置初始显示位置
+            Mango.open(MainActivity.this); //开启图片浏览
         });
         mImageAdapter.bindToRecyclerView(mRecyclerView);
 
-        //设置分割线
-        TitleItemDecoration titleItemDecoration = new TitleItemDecoration(this) {
-            @Override
-            public boolean calculateShouldHaveHeader(int position) {
-                return position <= mImageAdapter.getData().size() - 1
-                        && mImageAdapter.getData().get(position).getNum() >= 0
-                        && mImageAdapter.getData().get(position).getNum() < GRID_COLUMN_SIZE;
-            }
-
-            @Override
-            public String getTag(int position) {
-                if (position > mImageAdapter.getData().size() - 1) {
-                    return "";
-                } else {
-                    return mImageAdapter.getData().get(position).getDate();
-                }
-            }
-
-            @Override
-            public boolean calculateShouldHaveHeaderPadding(int position) {
-                //第一组的第一行才留白
-                return position <= mImageAdapter.getData().size() - 1
-                        && mImageAdapter.getData().get(position).getGroup() == 0
-                        && calculateShouldHaveHeader(position);
-            }
-        };
-        mRecyclerView.addItemDecoration(titleItemDecoration);
 
         //解决刷新闪烁的问题
         DefaultItemAnimator itemAnimator = new DefaultItemAnimator();
         itemAnimator.setSupportsChangeAnimations(false);
         mRecyclerView.setItemAnimator(itemAnimator);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, GRID_COLUMN_SIZE);
-        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-            @Override
-            public int getSpanSize(int position) {
-                //通过getSpanSize进行占位
-                if (position < mImageAdapter.getData().size() - 1) {
-                    ImageModel resourceBean = mImageAdapter.getData().get(position);
-                    //如果是最后一个
-                    if (resourceBean.getNum() == resourceBean.getGroupNum() - 1) {
-                        return GRID_COLUMN_SIZE - resourceBean.getNum() % GRID_COLUMN_SIZE;
-                    }
-                }
-                return 1;
-            }
-        });
-        mRecyclerView.setLayoutManager(gridLayoutManager);
+        mRecyclerView.setLayoutManager( new GridLayoutManager(this, GRID_COLUMN_SIZE));
     }
 
     private boolean hasPermissions() {
@@ -252,62 +199,37 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         mSwipeRefreshLayout.setRefreshing(true);
 
         searchDisposable = Observable.just(Config.SCREEN_CAPTURE)
-                .flatMap(new Function<String, ObservableSource<File>>() {
-                    @Override
-                    public ObservableSource<File> apply(String s) throws Exception {
-                        return ImageSearch.listImageFiles(new File(s));
-                    }
+                .flatMap((Function<String, ObservableSource<File>>) s -> ImageSearch.listImageFiles(new File(s)))
+                .map(file -> {
+                    long time = file.lastModified();
+                    return new ImageModel(time, file.getAbsolutePath(), ImageSearch.isLock(file));
                 })
-                .map(new Function<File, ImageModel>() {
-                    @Override
-                    public ImageModel apply(File file) throws Exception {
-                        long time = file.lastModified();
-                        return new ImageModel(time, file.getAbsolutePath(), ImageSearch.isLock(file));
-                    }
-                })
-                .sorted(new Comparator<ImageModel>() {
-                    @Override
-                    public int compare(ImageModel o1, ImageModel o2) {
-                        //按照时间倒序排列
-                        return Long.compare(o2.getLongTime(), o1.getLongTime());
-                    }
+                .sorted((o1, o2) -> {
+                    //按照时间倒序排列
+                    return Long.compare(o2.getLongTime(), o1.getLongTime());
                 })
                 .toList()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doFinally(new Action() {
-                    @Override
-                    public void run() throws Exception {
-                        mSwipeRefreshLayout.setRefreshing(false);
-                        emptyTipView.setVisibility((mImageAdapter.getData().size() > 0) ? View.GONE : View.VISIBLE);
-                        if (mImageAdapter.getData().size() == 0 && needFingerprint) {
-                            checkFingerPrint();
-                        }
+                .doFinally(() -> {
+                    mSwipeRefreshLayout.setRefreshing(false);
+                    emptyTipView.setVisibility((mImageAdapter.getData().size() > 0) ? View.GONE : View.VISIBLE);
+                    if (mImageAdapter.getData().size() == 0 && needFingerprint) {
+                        checkFingerPrint();
                     }
                 })
-                .map(new Function<List<ImageModel>, List<ImageModel>>() {
-                    @Override
-                    public List<ImageModel> apply(List<ImageModel> mData) throws Exception {
-                        convertData(mData);//排序
-                        return mData;
-                    }
+                .map(mData -> {
+                    convertData(mData);//排序
+                    return mData;
                 })
-                .subscribe(new Consumer<List<ImageModel>>() {
-                    @Override
-                    public void accept(List<ImageModel> imageModels) throws Exception {
-                        //如果图片存在加密的，则进行解密
-                        if (needUnLock && getLockSize(imageModels) > 0) {
-                            startLockOrUnlockPic(false, imageModels);
-                        } else {
-                            mImageAdapter.replaceData(getUnlockData(imageModels));
-                        }
+                .subscribe(imageModels -> {
+                    //如果图片存在加密的，则进行解密
+                    if (needUnLock && getLockSize(imageModels) > 0) {
+                        startLockOrUnlockPic(false, imageModels);
+                    } else {
+                        mImageAdapter.replaceData(getUnlockData(imageModels));
                     }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e(TAG, "error = " + throwable.getMessage());
-                    }
-                });
+                }, throwable -> Log.e(TAG, "error = " + throwable.getMessage()));
     }
 
     @Override
@@ -426,12 +348,7 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
                 .setTitle("一键加密")
                 .setMessage("共有" + sumSize + "张图片，其中" + lockSize + "已加密，" + (sumSize - lockSize) + "张未加密")
                 .setNegativeButton("取消", null)
-                .setPositiveButton("加密", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        startLockOrUnlockPic(true, mImageAdapter.getData());
-                    }
-                }).show();
+                .setPositiveButton("加密", (dialog, which) -> startLockOrUnlockPic(true, mImageAdapter.getData())).show();
     }
 
     private void startLockOrUnlockPic(final boolean toLock, List<ImageModel> data) {
@@ -440,55 +357,26 @@ public class MainActivity extends BaseActivity implements SwipeRefreshLayout.OnR
         lockDisposable = Observable.fromIterable(models)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .doOnSubscribe(new Consumer<Disposable>() {
-                    @Override
-                    public void accept(Disposable disposable) throws Exception {
-                        isRunning = true;
+                .doOnSubscribe(disposable -> isRunning = true)
+                .doOnNext(imageModel -> {
+                    if (!toLock & imageModel.isLock()) {
+                        lockUtil.unlock(new File(imageModel.getPath()));
+                    } else if (toLock & !imageModel.isLock()) {
+                        lockUtil.lock(new File(imageModel.getPath()));
                     }
                 })
-                .doOnNext(new Consumer<ImageModel>() {
-                    @Override
-                    public void accept(ImageModel imageModel) throws Exception {
-                        if (!toLock & imageModel.isLock()) {
-                            lockUtil.unlock(new File(imageModel.getPath()));
-                        } else if (toLock & !imageModel.isLock()) {
-                            lockUtil.lock(new File(imageModel.getPath()));
-                        }
-                    }
-                })
-                .filter(new Predicate<ImageModel>() {
-                    @Override
-                    public boolean test(ImageModel imageModel) throws Exception {
-                        return !imageModel.isLock();
-                    }
-                })
+                .filter(imageModel -> !imageModel.isLock())
                 .toList()
                 .observeOn(AndroidSchedulers.mainThread())
-                .doFinally(new Action() {
-                    @Override
-                    public void run() throws Exception {
-                        dialog.dismiss();
-                        isRunning = false;
-                    }
+                .doFinally(() -> {
+                    dialog.dismiss();
+                    isRunning = false;
                 })
-                .doOnError(new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        ToastUtil.showToast(toLock ? "加密失败" : "解密失败");
-                    }
-                })
-                .subscribe(new Consumer<List<ImageModel>>() {
-                    @Override
-                    public void accept(List<ImageModel> imageModel) throws Exception {
-                        ToastUtil.showToast(toLock ? "加密完成" : "解密完成");
-                        startPicSearch(false, toLock);
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Logg.e(throwable.getMessage());
-                    }
-                });
+                .doOnError(throwable -> ToastUtil.showToast(toLock ? "加密失败" : "解密失败"))
+                .subscribe(imageModel -> {
+                    ToastUtil.showToast(toLock ? "加密完成" : "解密完成");
+                    startPicSearch(false, toLock);
+                }, throwable -> com.jqorz.aydassistant.util.Logg.e(throwable.getMessage()));
     }
 
 

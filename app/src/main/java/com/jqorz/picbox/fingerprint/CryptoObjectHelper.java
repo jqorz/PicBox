@@ -3,7 +3,8 @@ package com.jqorz.picbox.fingerprint;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
+
+import androidx.core.hardware.fingerprint.FingerprintManagerCompat;
 
 import com.jqorz.picbox.utils.AppConfig;
 
